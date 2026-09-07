@@ -1,8 +1,9 @@
 export const CONFIG = {
-  API_BASE_URL: 'https://102-203-116-212.sslip.io/api/v1',
+  API_BASE_URL: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://102-203-116-212.sslip.io/api',
   API_TIMEOUT_MS: 15000,
   APP_NAME: 'STARGAZE ISP & Hotspot',
-  APP_VERSION: '1.0.0-PROD',
+  APP_VERSION: '1.0.0',
+  APP_ENV: process.env.EXPO_PUBLIC_APP_ENV || 'production',
   DEFAULT_TENANT_ID: 'tenant-main-nairobi',
 };
 

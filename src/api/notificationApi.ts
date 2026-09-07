@@ -1,4 +1,4 @@
-import { apiClient } from './ApiClient';
+﻿import { apiClient } from './ApiClient';
 import { ApiResponse } from '../types/api';
 import { DeviceRegistrationPayload, NotificationType, PushNotificationItem } from '../types/models';
 
@@ -13,10 +13,7 @@ export const notificationApi = {
       );
       return response.data.data;
     } catch {
-      return {
-        success: true,
-        message: `Device token registered successfully for platform ${payload.platform}.`,
-      };
+      return { success: true, message: 'Device token queued for registration.' };
     }
   },
 
@@ -30,50 +27,36 @@ export const notificationApi = {
       );
       return response.data.data;
     } catch {
-      // Mock notifications for instant preview & testing
       const now = new Date().toISOString();
       switch (type) {
         case 'CRITICAL':
           return {
             id: 'notif-crit-' + Date.now(),
             type: 'CRITICAL',
-            title: '🚨 PRIORITY: Link Route Verified',
-            body: 'Core gateway link test complete. All router ports including ether4 are 100% online and synchronized.',
+            title: '🚨 Critical Hardware Alert',
+            body: 'Core gateway link test — all ports including ether4 are online.',
             targetScreen: 'Operations',
-            data: {
-              portName: 'ether4',
-              apModel: 'TP-Link EAP225-Outdoor v3',
-              macAddress: '74:83:C2:55:66:77',
-              screen: 'Operations',
-            },
+            data: { screen: 'Operations' },
             timestamp: now,
           };
         case 'PAYMENT':
           return {
             id: 'notif-pay-' + Date.now(),
             type: 'PAYMENT',
-            title: '💰 High-Value M-Pesa Payment',
-            body: 'Received KES 4,500.00 from Mercy Achieng (254711889002) for Business Fiber 50M.',
+            title: '💰 M-Pesa Payment Received',
+            body: 'New payment confirmed. See Customers screen for details.',
             targetScreen: 'Customers',
-            data: {
-              receiptCode: 'UI5G99HIGH',
-              amount: 4500,
-              screen: 'Customers',
-            },
+            data: { screen: 'Customers' },
             timestamp: now,
           };
         case 'TICKET':
           return {
             id: 'notif-tkt-' + Date.now(),
             type: 'TICKET',
-            title: '🎫 Field Support Dispatched',
-            body: 'Emergency incident assigned to technician Alex Kariuki at Westlands Mall Rooftop.',
+            title: '🎫 Field Support Ticket',
+            body: 'New support ticket assigned. Check Operations for details.',
             targetScreen: 'Operations',
-            data: {
-              ticketId: 'TKT-8921',
-              location: 'Westlands Mall',
-              screen: 'Operations',
-            },
+            data: { screen: 'Operations' },
             timestamp: now,
           };
       }

@@ -23,11 +23,11 @@ import { checkBiometricSupport, promptBiometricAuth } from '../../utils/biometri
 import { UserRole } from '../../types/models';
 import {
   firebaseSignIn,
-  firebaseSignInWithGoogle,
   firebaseRegisterUser,
   firebaseSendPasswordReset,
   getFirebaseErrorMessage,
 } from '../../services/firebaseConfig';
+import { GoogleSignin, statusCodes } from '@react-native-google-signin/google-signin';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 type AuthMode = 'LOGIN' | 'REGISTER' | 'RECOVERY';
@@ -55,12 +55,8 @@ export const LoginScreen: React.FC = () => {
   const [recoveryEmail, setRecoveryEmail] = useState('');
   const [recoverySent, setRecoverySent] = useState(false);
 
-  // Google sign-in modal state
-  const [showGoogleModal, setShowGoogleModal] = useState(false);
-  const [googleEmail, setGoogleEmail] = useState('');
-  const [googlePassword, setGooglePassword] = useState('');
+  // Google sign-in loading state (no modal needed — native picker handles UI)
   const [googleLoading, setGoogleLoading] = useState(false);
-  const [googleError, setGoogleError] = useState<string | null>(null);
 
   // Shared state
   const [loading, setLoading] = useState(false);
@@ -76,8 +72,17 @@ export const LoginScreen: React.FC = () => {
   const currentTenant = useTenantStore((state) => state.currentTenant);
 
   useEffect(() => {
-    checkBiometricSupport().then((caps) => {
+    checkBiometricSupport().then(() => {
       setBioSupported(true);
+    });
+
+    // Configure native Google Sign-In safely
+    const webClientId = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
+    GoogleSignin.configure({
+      webClientId: webClientId && webClientId.trim().length > 0 ? webClientId.trim() : undefined,
+      offlineAccess: Boolean(webClientId && webClientId.trim().length > 0),
+      forceCodeForRefreshToken: Boolean(webClientId && webClientId.trim().length > 0),
+      scopes: ['profile', 'email'],
     });
   }, []);
 
@@ -99,67 +104,71 @@ export const LoginScreen: React.FC = () => {
     setSuccessMessage(null);
   };
 
-  // Open Google Account Login Prompt
-  const openGoogleSignIn = () => {
-    setGoogleEmail('');
-    setGooglePassword('');
-    setGoogleError(null);
-    setShowGoogleModal(true);
-  };
-
-  // Authenticate Google Account with Strict Validation
-  const handleGoogleSubmit = async () => {
-    setGoogleError(null);
-    const cleanEmail = googleEmail.trim().toLowerCase();
-    if (!cleanEmail) {
-      setGoogleError('Please enter your Google Account email.');
-      return;
-    }
-    if (!cleanEmail.includes('@')) {
-      setGoogleError('Please enter a valid Google email address.');
-      return;
-    }
-
+  // Native Google Sign-In — launches Android system account picker
+  const openGoogleSignIn = async () => {
+    setErrorMessage(null);
     setGoogleLoading(true);
     try {
-      const fbUser = await firebaseSignInWithGoogle(cleanEmail, googlePassword);
-      const userEmail = fbUser.email || cleanEmail;
-      const lowerEmail = userEmail.toLowerCase();
+      await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+      const response: any = await GoogleSignin.signIn();
+      const userData = response?.data?.user ?? response?.user ?? response;
+      const idToken = response?.data?.idToken ?? response?.idToken;
+      const userEmail = (userData?.email || '').toLowerCase();
 
-      let userRole: UserRole = fbUser.role || 'TECHNICIAN';
-      if (!fbUser.role) {
-        if (lowerEmail.includes('super') || lowerEmail.includes('director') || lowerEmail.includes('owner')) {
-          userRole = 'SUPER_ADMIN';
-        } else if (lowerEmail.includes('admin') || lowerEmail.includes('manager') || lowerEmail.includes('branch')) {
-          userRole = 'TENANT_ADMIN';
-        }
+      // Determine role from email pattern or known operator registry
+      let userRole: UserRole = 'TECHNICIAN';
+      if (
+        userEmail.includes('superadmin') ||
+        userEmail.includes('director') ||
+        userEmail.includes('owner')
+      ) {
+        userRole = 'SUPER_ADMIN';
+      } else if (
+        userEmail.includes('admin') ||
+        userEmail.includes('manager') ||
+        userEmail.includes('branch')
+      ) {
+        userRole = 'TENANT_ADMIN';
       }
 
-      const idToken = (await fbUser.getIdToken?.()) || `fb-tok-${Date.now()}`;
-      setShowGoogleModal(false);
+      const knownRoles: Record<string, UserRole> = {
+        'superadmin@stargaze.net': 'SUPER_ADMIN',
+        'admin@stargaze.net': 'TENANT_ADMIN',
+        'technician@stargaze.net': 'TECHNICIAN',
+      };
+      if (knownRoles[userEmail]) userRole = knownRoles[userEmail];
 
       await setAuth({
         user: {
-          id: fbUser.uid,
-          email: userEmail,
-          name: fbUser.displayName || userEmail.split('@')[0],
+          id: userData?.id || `google-${Date.now()}`,
+          email: userData?.email || userEmail,
+          name: userData?.name || userData?.email?.split('@')[0] || 'Google User',
           role: userRole,
-          avatarUrl: fbUser.photoURL || undefined,
-          phone: fbUser.phoneNumber || '+254 700 000 000',
+          avatarUrl: userData?.photo || undefined,
+          phone: '',
           tenantId: currentTenant?.id || 'tenant-main-nairobi',
         },
-        accessToken: idToken,
-        refreshToken: fbUser.refreshToken,
+        accessToken: idToken || `google-tok-${Date.now()}`,
+        refreshToken: '',
       });
 
-      setSuccessMessage(`Signed in as ${fbUser.displayName || userEmail}`);
+      setSuccessMessage(`Signed In As ${userData?.name || userEmail}`);
     } catch (err: any) {
-      const msg = err.code ? getFirebaseErrorMessage(err.code) : err.message;
-      setGoogleError(msg || 'Google Authentication failed. Please verify credentials.');
+      if (err.code === statusCodes.SIGN_IN_CANCELLED) {
+        // User cancelled picker
+      } else if (err.code === statusCodes.IN_PROGRESS) {
+        setErrorMessage('Sign-In Already In Progress');
+      } else if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
+        setErrorMessage('Google Play Services Not Available');
+      } else {
+        setErrorMessage(err.message || 'Google Authentication Failed. Please Try Again.');
+      }
     } finally {
       setGoogleLoading(false);
     }
   };
+
+
 
   // Handle Firebase + Platform Email & Password Login
   const handleLogin = async () => {
@@ -450,11 +459,17 @@ export const LoginScreen: React.FC = () => {
               <TouchableOpacity
                 activeOpacity={0.85}
                 onPress={openGoogleSignIn}
-                disabled={loading}
+                disabled={loading || googleLoading}
                 style={styles.googleButton}
               >
-                <Ionicons name="logo-google" size={18} color="#EA4335" />
-                <Text style={styles.googleButtonText}>Sign In with Google</Text>
+                {googleLoading ? (
+                  <ActivityIndicator size="small" color="#EA4335" />
+                ) : (
+                  <>
+                    <Ionicons name="logo-google" size={18} color="#EA4335" />
+                    <Text style={styles.googleButtonText}>Sign In with Google</Text>
+                  </>
+                )}
               </TouchableOpacity>
 
               {/* Visual Divider */}
@@ -829,90 +844,7 @@ export const LoginScreen: React.FC = () => {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ========================================================================= */}
-      {/* MODAL: GOOGLE ACCOUNT AUTHENTICATION */}
-      {/* ========================================================================= */}
-      <Modal
-        visible={showGoogleModal}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setShowGoogleModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.googleModalContent}>
-            <View style={styles.modalHeaderRow}>
-              <View style={styles.googleIconCircle}>
-                <Ionicons name="logo-google" size={24} color="#EA4335" />
-              </View>
-              <View style={{ flex: 1, marginLeft: 12 }}>
-                <Text style={styles.modalTitle}>Google Authentication</Text>
-                <Text style={styles.modalSubtitle}>Sign in with your Google Account</Text>
-              </View>
-              <TouchableOpacity
-                onPress={() => setShowGoogleModal(false)}
-                style={styles.closeBtn}
-              >
-                <Ionicons name="close" size={20} color={COLORS.textMuted} />
-              </TouchableOpacity>
-            </View>
 
-            {googleError && (
-              <View style={styles.modalErrorBox}>
-                <Ionicons name="alert-circle" size={16} color={COLORS.rose} />
-                <Text style={styles.modalErrorText}>{googleError}</Text>
-              </View>
-            )}
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Google Account Email</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="mail-outline" size={18} color={COLORS.textSecondary} />
-                <TextInput
-                  value={googleEmail}
-                  onChangeText={(t) => {
-                    setGoogleEmail(t);
-                    setGoogleError(null);
-                  }}
-                  placeholder="operator@stargaze.net or @gmail.com"
-                  placeholderTextColor={COLORS.textMuted}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  style={styles.input}
-                />
-              </View>
-            </View>
-
-            <View style={styles.inputGroup}>
-              <Text style={styles.inputLabel}>Passphrase / Security Token</Text>
-              <View style={styles.inputContainer}>
-                <Ionicons name="lock-closed-outline" size={18} color={COLORS.textSecondary} />
-                <TextInput
-                  value={googlePassword}
-                  onChangeText={setGooglePassword}
-                  placeholder="Enter passphrase (or stargaze123)"
-                  placeholderTextColor={COLORS.textMuted}
-                  secureTextEntry
-                  style={styles.input}
-                />
-              </View>
-            </View>
-
-            <Button
-              title="Authenticate with Google"
-              onPress={handleGoogleSubmit}
-              loading={googleLoading}
-              style={{ marginTop: SPACING.sm }}
-            />
-
-            <TouchableOpacity
-              onPress={() => setShowGoogleModal(false)}
-              style={styles.modalCancelBtn}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
     </SafeAreaView>
   );
 };
@@ -1383,6 +1315,60 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     letterSpacing: 0.2,
     flex: 1,
+  },
+  googleAccountsContainer: {
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    overflow: 'hidden',
+    marginBottom: SPACING.md,
+  },
+  googleAccountItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.md,
+  },
+  googleAvatarCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  googleAvatarLetter: {
+    color: '#FFFFFF',
+    fontWeight: '800',
+    fontSize: 16,
+  },
+  googleAccountInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  googleAccountName: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  googleAccountEmail: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
+  },
+  googleAccountSeparator: {
+    height: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    marginLeft: 62,
+  },
+  googleCustomSection: {
+    marginTop: SPACING.xs,
+  },
+  googleUseAnotherText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textMuted,
+    marginBottom: SPACING.xs,
   },
 });
 

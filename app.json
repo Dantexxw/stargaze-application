@@ -50,7 +50,8 @@
           "color": "#6366F1"
         }
       ],
-      "expo-font"
+      "expo-font",
+      "@react-native-google-signin/google-signin"
     ]
   }
 }

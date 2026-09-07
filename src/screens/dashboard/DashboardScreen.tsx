@@ -32,7 +32,7 @@ import { TouchableOpacity } from 'react-native';
 
 export const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
-  const { data: metrics, isLoading, refetch } = useDashboardData();
+  const { data: metrics, isLoading, error, refetch } = useDashboardData();
   const user = useAuthStore((state) => state.user);
 
   const [refreshing, setRefreshing] = useState(false);
@@ -74,22 +74,37 @@ export const DashboardScreen: React.FC = () => {
           />
         }
       >
+        {/* Connection error banner */}
+        {error && !metrics && (
+          <Card variant="surface" style={styles.errorBanner}>
+            <View style={styles.errorRow}>
+              <Ionicons name="cloud-offline" size={20} color={COLORS.rose} />
+              <View style={styles.errorTextBlock}>
+                <Text style={styles.errorTitle}>Server Unreachable</Text>
+                <Text style={styles.errorBody}>
+                  Could not reach the Stargaze API. Check your connection and pull to refresh.
+                </Text>
+              </View>
+            </View>
+          </Card>
+        )}
+
         {/* KPI Row 1: Active Subscribers & Hotspots */}
         <View style={styles.statsGrid}>
           <StatWidget
             title="Active PPPoE"
-            value={metrics?.activeSubscribers.toLocaleString() || '1,842'}
-            subtitle={`of ${metrics?.totalSubscribers || 2150} Total`}
+            value={metrics?.activeSubscribers != null ? metrics.activeSubscribers.toLocaleString() : '—'}
+            subtitle={metrics?.totalSubscribers != null ? `of ${metrics.totalSubscribers} Total` : 'Awaiting data'}
             icon={<Ionicons name="people" size={18} color={COLORS.primaryLight} />}
-            trend={{ value: '4.8% this week', isPositive: true }}
+            trend={{ value: metrics ? '4.8% this week' : 'No data', isPositive: true }}
             accentColor={COLORS.primary}
           />
           <StatWidget
             title="Hotspot Users"
-            value={metrics?.activeHotspotUsers.toLocaleString() || '348'}
+            value={metrics?.activeHotspotUsers != null ? metrics.activeHotspotUsers.toLocaleString() : '—'}
             subtitle="Active Sessions"
             icon={<Ionicons name="wifi" size={18} color={COLORS.violetLight} />}
-            trend={{ value: '12% today', isPositive: true }}
+            trend={{ value: metrics ? '12% today' : 'No data', isPositive: true }}
             accentColor={COLORS.violet}
           />
         </View>
@@ -98,31 +113,31 @@ export const DashboardScreen: React.FC = () => {
         <View style={styles.statsGrid}>
           <StatWidget
             title="Online Routers"
-            value={`${metrics?.onlineGateways ?? 20} / ${metrics?.totalGateways ?? 20}`}
-            subtitle="100% Availability"
+            value={metrics ? `${metrics.onlineGateways} / ${metrics.totalGateways}` : '—'}
+            subtitle={metrics ? '100% Availability' : 'Awaiting data'}
             icon={<MaterialCommunityIcons name="router-network" size={18} color={COLORS.emerald} />}
-            trend={{ value: 'All Online', isPositive: true }}
+            trend={{ value: metrics ? 'All Online' : 'No data', isPositive: true }}
             accentColor={COLORS.emerald}
           />
           <StatWidget
             title="Active Alerts"
-            value={metrics?.unresolvedAlerts ?? 0}
-            subtitle={metrics?.unresolvedAlerts ? 'Require Attention' : 'All Interfaces Normal'}
+            value={metrics?.unresolvedAlerts ?? '—'}
+            subtitle={metrics ? (metrics.unresolvedAlerts ? 'Require Attention' : 'All Interfaces Normal') : 'Awaiting data'}
             icon={<Ionicons name={metrics?.unresolvedAlerts ? 'warning' : 'shield-checkmark'} size={18} color={metrics?.unresolvedAlerts ? COLORS.rose : COLORS.emerald} />}
             trend={{
-              value: metrics?.unresolvedAlerts ? `${metrics.unresolvedAlerts} Critical` : '0 Alarms',
+              value: metrics ? (metrics.unresolvedAlerts ? `${metrics.unresolvedAlerts} Critical` : '0 Alarms') : 'No data',
               isPositive: (metrics?.unresolvedAlerts ?? 0) === 0,
             }}
             accentColor={metrics?.unresolvedAlerts ? COLORS.rose : COLORS.emerald}
           />
         </View>
 
-        {/* Real-time Bandwidth Gauge with Live Speedtest Benchmark trigger */}
+        {/* Real-time Bandwidth Gauge */}
         <BandwidthGauge
-          downloadMbps={metrics?.downloadSpeedMbps || 642.5}
-          uploadMbps={metrics?.uploadSpeedMbps || 318.2}
-          peakMbps={metrics?.peakBandwidthMbps || 850.0}
-          totalTransferredGB={metrics?.totalDataTransferredGB || 4120}
+          downloadMbps={metrics?.downloadSpeedMbps ?? 0}
+          uploadMbps={metrics?.uploadSpeedMbps ?? 0}
+          peakMbps={metrics?.peakBandwidthMbps ?? 0}
+          totalTransferredGB={metrics?.totalDataTransferredGB ?? 0}
           onSpeedtestPress={() => setSpeedtestVisible(true)}
         />
 
@@ -274,6 +289,30 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+  },
+  errorBanner: {
+    marginBottom: SPACING.sm,
+    padding: SPACING.md,
+    borderColor: COLORS.rose,
+    borderWidth: 1,
+  },
+  errorRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  errorTextBlock: {
+    marginLeft: SPACING.sm,
+    flex: 1,
+  },
+  errorTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: COLORS.rose,
+  },
+  errorBody: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginTop: 2,
   },
   healthStatus: {
     padding: SPACING.xs,

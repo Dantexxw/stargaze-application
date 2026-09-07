@@ -109,7 +109,7 @@ export const SettingsProfileScreen: React.FC = () => {
               }
               size="sm"
             />
-            <Text style={styles.phoneText}>{user?.phone || '+254 712 345 678'}</Text>
+            <Text style={styles.phoneText}>{user?.phone || '—'}</Text>
           </View>
         </Card>
 

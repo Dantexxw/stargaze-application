@@ -2,6 +2,10 @@ package com.stargaze.isp
 
 import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -17,6 +21,15 @@ class MainActivity : ReactActivity() {
     // This is required for expo-splash-screen.
     setTheme(R.style.AppTheme);
     super.onCreate(null)
+
+    // Edge-to-edge: let React Native content draw behind system bars
+    WindowCompat.setDecorFitsSystemWindows(window, false)
+
+    // Sticky immersive — nav bar hides; reappears on swipe-up gesture only
+    val controller = WindowInsetsControllerCompat(window, window.decorView)
+    controller.hide(WindowInsetsCompat.Type.navigationBars())
+    controller.systemBarsBehavior =
+      WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
   }
 
   /**
