@@ -5,6 +5,7 @@ import { TabNavigator } from './TabNavigator';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { useTenantStore } from '../store/useTenantStore';
+import { setOnAuthExpired } from '../api/ApiClient';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { COLORS } from '../constants/theme';
 
@@ -14,9 +15,13 @@ export const AppNavigator: React.FC = () => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isLoading = useAuthStore((state) => state.isLoading);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const logout = useAuthStore((state) => state.logout);
   const loadPersistedTenant = useTenantStore((state) => state.loadPersistedTenant);
 
   useEffect(() => {
+    setOnAuthExpired(() => {
+      logout();
+    });
     initializeAuth();
     loadPersistedTenant();
   }, []);

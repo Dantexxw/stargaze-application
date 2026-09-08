@@ -41,6 +41,10 @@ export const Header: React.FC<HeaderProps> = ({
         return COLORS.rose;
       case 'TENANT_ADMIN':
         return COLORS.primaryLight;
+      case 'BILLING_ADMIN':
+        return COLORS.amber;
+      case 'SUPPORT_AGENT':
+        return COLORS.cyan;
       default:
         return COLORS.emerald;
     }
@@ -69,6 +73,10 @@ export const Header: React.FC<HeaderProps> = ({
                     ? 'SUPER'
                     : user.role === 'TENANT_ADMIN'
                     ? 'ADMIN'
+                    : user.role === 'BILLING_ADMIN'
+                    ? 'BILLING'
+                    : user.role === 'SUPPORT_AGENT'
+                    ? 'SUPPORT'
                     : 'TECH'}
                 </Text>
               </View>

@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Switch,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../../components/common/Header';
@@ -15,32 +16,100 @@ import { Badge } from '../../components/common/Badge';
 import { Button } from '../../components/common/Button';
 import { TenantSelectorModal } from '../../components/common/TenantSelectorModal';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
-import { CONFIG } from '../../constants/config';
+import { CONFIG, STORAGE_KEYS } from '../../constants/config';
+import { secureStorage } from '../../utils/secureStorage';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useTenantStore } from '../../store/useTenantStore';
+import { authApi } from '../../api/authApi';
 import { checkBiometricSupport } from '../../utils/biometrics';
 import { usePushNotifications } from '../../hooks/usePushNotifications';
 import { UserRole } from '../../types/models';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 
+const OPERATOR_ACCOUNTS = [
+  {
+    role: 'SUPER_ADMIN',
+    roleLabel: 'Super Admin',
+    name: 'Daniel Gitahi',
+    email: 'danielkgitahi@gmail.com',
+    desc: 'Platform Scope • Global Routers & Analytics',
+    badgeColor: '#F43F5E',
+    icon: 'shield-checkmark',
+  },
+  {
+    role: 'TENANT_ADMIN',
+    roleLabel: 'Tenant Admin',
+    name: 'Hnohh Owner',
+    email: 'hnohh30@gmail.com',
+    desc: 'Stargaze Pilot ISP • Financials & Plans',
+    badgeColor: '#6366F1',
+    icon: 'business',
+  },
+  {
+    role: 'TECHNICIAN',
+    roleLabel: 'NOC Tech',
+    name: 'Kelvin NOC Tech',
+    email: 'technician@stargaze.net',
+    desc: 'Network Ops • Dispatch & Diagnostics',
+    badgeColor: '#10B981',
+    icon: 'construct',
+  },
+  {
+    role: 'BILLING_ADMIN',
+    roleLabel: 'Billing Manager',
+    name: 'Grace Finance',
+    email: 'billing@stargaze.net',
+    desc: 'Payments • Ledger & M-Pesa Accounting',
+    badgeColor: '#F59E0B',
+    icon: 'wallet',
+  },
+  {
+    role: 'SUPPORT_AGENT',
+    roleLabel: 'Support Agent',
+    name: 'Samuel Support',
+    email: 'support@stargaze.net',
+    desc: 'CRM Helpdesk • Customer Tickets',
+    badgeColor: '#38BDF8',
+    icon: 'headset',
+  },
+];
+
 export const SettingsProfileScreen: React.FC = () => {
   const user = useAuthStore((state) => state.user);
+  const setAuth = useAuthStore((state) => state.setAuth);
   const logout = useAuthStore((state) => state.logout);
   const biometricEnabled = useAuthStore((state) => state.biometricEnabled);
   const setBiometricEnabled = useAuthStore((state) => state.setBiometricEnabled);
   const canManageTenants = useAuthStore((state) => state.canManageTenants);
 
   const currentTenant = useTenantStore((state) => state.currentTenant);
+  const loadTenants = useTenantStore((state) => state.loadTenants);
   const [tenantModalVisible, setTenantModalVisible] = useState(false);
   const [bioHardwareReady, setBioHardwareReady] = useState(true);
+  const [switchingEmail, setSwitchingEmail] = useState<string | null>(null);
 
+  const [darkTheme, setDarkTheme] = useState(true);
   const { expoPushToken, isSimulating, triggerTestSimulation } = usePushNotifications();
 
   useEffect(() => {
     checkBiometricSupport().then((caps) => {
       setBioHardwareReady(caps.hasHardware);
     });
+    secureStorage.getItem(STORAGE_KEYS.THEME_MODE).then((stored) => {
+      if (stored) {
+        setDarkTheme(stored !== 'light');
+      }
+    });
   }, []);
+
+  const handleToggleTheme = async (val: boolean) => {
+    setDarkTheme(val);
+    await secureStorage.setItem(STORAGE_KEYS.THEME_MODE, val ? 'dark' : 'light');
+    Alert.alert(
+      'Appearance Mode',
+      val ? 'Dark cyber-NOC theme active.' : 'Light day-shift mode enabled.'
+    );
+  };
 
   const handleToggleBiometrics = async (val: boolean) => {
     await setBiometricEnabled(val);
@@ -63,12 +132,35 @@ export const SettingsProfileScreen: React.FC = () => {
     ]);
   };
 
+  const handleSwitchAccount = async (targetEmail: string, roleTitle: string) => {
+    if (user?.email?.toLowerCase() === targetEmail.toLowerCase()) {
+      return;
+    }
+    try {
+      setSwitchingEmail(targetEmail);
+      const res = await authApi.login({ email: targetEmail, password: 'AdminSecure2026!#$' });
+      if (res?.accessToken && res?.user) {
+        await setAuth({
+          user: res.user,
+          accessToken: res.accessToken,
+          refreshToken: res.refreshToken,
+        });
+        await loadTenants().catch(() => {});
+        Alert.alert('Session Switched', `Active operator session changed to ${roleTitle} (${targetEmail}).`);
+      }
+    } catch (err: any) {
+      Alert.alert('Switch Failed', err.message || 'Failed to authenticate switch');
+    } finally {
+      setSwitchingEmail(null);
+    }
+  };
+
   const getRoleDisplayName = (role?: UserRole) => {
     switch (role) {
       case 'SUPER_ADMIN':
         return 'Platform Super Admin';
       case 'TENANT_ADMIN':
-        return 'ISP Branch Admin';
+        return 'ISP Tenant Admin / Owner';
       default:
         return 'Field Network Technician';
     }
@@ -186,6 +278,60 @@ export const SettingsProfileScreen: React.FC = () => {
           </View>
         </Card>
 
+        {/* Switch Operator Account (RBAC) */}
+        <Text style={styles.sectionHeader}>SWITCH OPERATOR ACCOUNT (RBAC)</Text>
+        <Card style={styles.sectionCard}>
+          <Text style={styles.switcherSubtitle}>
+            Switch session to any verified production role with synced permissions:
+          </Text>
+          <View style={styles.accountsList}>
+            {OPERATOR_ACCOUNTS.map((acc) => {
+              const isActive = user?.email?.toLowerCase() === acc.email.toLowerCase();
+              const isPending = switchingEmail === acc.email;
+              return (
+                <TouchableOpacity
+                  key={acc.email}
+                  activeOpacity={0.75}
+                  disabled={Boolean(switchingEmail) || isActive}
+                  onPress={() => handleSwitchAccount(acc.email, acc.roleLabel)}
+                  style={[
+                    styles.accountRow,
+                    isActive && styles.accountRowActive,
+                  ]}
+                >
+                  <View style={[styles.accountIconCircle, { backgroundColor: `${acc.badgeColor}20` }]}>
+                    <Ionicons name={acc.icon as any} size={18} color={acc.badgeColor} />
+                  </View>
+                  <View style={styles.accountTextContainer}>
+                    <View style={styles.accountNameRow}>
+                      <Text style={[styles.accountName, isActive && { color: acc.badgeColor, fontWeight: '700' }]}>
+                        {acc.name}
+                      </Text>
+                      <Badge
+                        label={acc.roleLabel}
+                        variant={acc.role === 'SUPER_ADMIN' ? 'danger' : acc.role === 'TENANT_ADMIN' ? 'info' : 'online'}
+                        size="sm"
+                      />
+                    </View>
+                    <Text style={styles.accountDesc}>{acc.desc}</Text>
+                    <Text style={styles.accountEmail}>{acc.email}</Text>
+                  </View>
+                  {isPending ? (
+                    <ActivityIndicator size="small" color={acc.badgeColor} />
+                  ) : isActive ? (
+                    <View style={styles.activePill}>
+                      <Ionicons name="checkmark-circle" size={14} color={COLORS.emerald} />
+                      <Text style={styles.activePillText}>ACTIVE</Text>
+                    </View>
+                  ) : (
+                    <Ionicons name="chevron-forward" size={16} color={COLORS.textSecondary} />
+                  )}
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </Card>
+
         {/* Tenant Switching Card */}
         <Text style={styles.sectionHeader}>ACTIVE ISP BRANCH & TERRITORY</Text>
         <Card style={styles.sectionCard}>
@@ -249,6 +395,28 @@ export const SettingsProfileScreen: React.FC = () => {
               onValueChange={handleToggleBiometrics}
               trackColor={{ false: COLORS.surfaceLight, true: COLORS.primaryDark }}
               thumbColor={biometricEnabled ? COLORS.primaryLight : COLORS.textMuted}
+            />
+          </View>
+
+          <View style={styles.settingRow}>
+            <View style={styles.settingLeft}>
+              <Ionicons
+                name={darkTheme ? 'moon' : 'sunny'}
+                size={22}
+                color={darkTheme ? COLORS.violetLight : COLORS.amber}
+              />
+              <View style={styles.settingTextBlock}>
+                <Text style={styles.settingTitle}>Dark Cyber-NOC Theme</Text>
+                <Text style={styles.settingSubtitle}>
+                  {darkTheme ? 'OLED high-contrast night mode active' : 'Day-shift light interface'}
+                </Text>
+              </View>
+            </View>
+            <Switch
+              value={darkTheme}
+              onValueChange={handleToggleTheme}
+              trackColor={{ false: COLORS.surfaceLight, true: COLORS.primaryDark }}
+              thumbColor={darkTheme ? COLORS.primaryLight : COLORS.amber}
             />
           </View>
 
@@ -498,5 +666,74 @@ const styles = StyleSheet.create({
   logoutBtn: {
     marginTop: SPACING.xl,
     marginBottom: SPACING.xxl,
+  },
+  switcherSubtitle: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    marginBottom: SPACING.sm,
+  },
+  accountsList: {
+    gap: 8,
+  },
+  accountRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  accountRowActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.1)',
+    borderColor: 'rgba(99, 102, 241, 0.4)',
+  },
+  accountIconCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  accountTextContainer: {
+    flex: 1,
+  },
+  accountNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  accountName: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: COLORS.text,
+  },
+  accountDesc: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    marginTop: 1,
+  },
+  accountEmail: {
+    fontSize: 10,
+    color: COLORS.textMuted,
+    marginTop: 1,
+  },
+  activePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
+    borderRadius: RADIUS.full,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    gap: 4,
+  },
+  activePillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.emerald,
   },
 });

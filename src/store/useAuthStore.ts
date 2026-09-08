@@ -27,6 +27,8 @@ interface AuthState {
   // Role Guard Helpers
   isSuperAdmin: () => boolean;
   isTenantAdmin: () => boolean;
+  isBillingAdmin: () => boolean;
+  isSupportAgent: () => boolean;
   isTechnician: () => boolean;
   canManageTenants: () => boolean;
   canViewRevenue: () => boolean;
@@ -128,14 +130,44 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const savedEmail = storedEmail || null;
 
       if (storedToken && storedUser) {
-        set({
-          accessToken: storedToken,
-          refreshToken: storedRefresh,
-          user: JSON.parse(storedUser) as User,
-          isAuthenticated: true,
-          biometricEnabled,
-          savedEmail,
-        });
+        let isValid = true;
+        try {
+          // Check if JWT payload is expired
+          const parts = storedToken.split('.');
+          if (parts.length === 3) {
+            const payload = JSON.parse(
+              atob ? atob(parts[1]) : Buffer.from(parts[1], 'base64').toString('utf-8')
+            );
+            if (payload?.exp && payload.exp * 1000 < Date.now()) {
+              // Token is expired; if no refresh token, session is invalid
+              if (!storedRefresh) {
+                isValid = false;
+              }
+            }
+          }
+        } catch {
+          // If decoding fails, keep optimistic and let axios interceptor refresh
+        }
+
+        if (isValid) {
+          set({
+            accessToken: storedToken,
+            refreshToken: storedRefresh,
+            user: JSON.parse(storedUser) as User,
+            isAuthenticated: true,
+            biometricEnabled,
+            savedEmail,
+          });
+        } else {
+          set({
+            user: null,
+            accessToken: null,
+            refreshToken: null,
+            isAuthenticated: false,
+            biometricEnabled,
+            savedEmail,
+          });
+        }
       } else {
         set({
           user: null,
@@ -156,10 +188,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // Role permissions
   isSuperAdmin: () => get().user?.role === 'SUPER_ADMIN',
   isTenantAdmin: () => get().user?.role === 'TENANT_ADMIN',
+  isBillingAdmin: () => get().user?.role === 'BILLING_ADMIN',
+  isSupportAgent: () => get().user?.role === 'SUPPORT_AGENT',
   isTechnician: () => get().user?.role === 'TECHNICIAN',
   canManageTenants: () => get().user?.role === 'SUPER_ADMIN',
   canViewRevenue: () =>
-    get().user?.role === 'SUPER_ADMIN' || get().user?.role === 'TENANT_ADMIN',
+    get().user?.role === 'SUPER_ADMIN' ||
+    get().user?.role === 'TENANT_ADMIN' ||
+    get().user?.role === 'BILLING_ADMIN',
   canConfigureRouters: () => get().user?.role === 'SUPER_ADMIN',
   canRebootGateways: () =>
     get().user?.role === 'SUPER_ADMIN' || get().user?.role === 'TENANT_ADMIN',

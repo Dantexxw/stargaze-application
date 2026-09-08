@@ -31,6 +31,54 @@ import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 type AuthMode = 'LOGIN' | 'REGISTER' | 'RECOVERY';
 
+const QUICK_OPERATOR_ACCOUNTS = [
+  {
+    role: 'SUPER_ADMIN',
+    label: 'Super Admin',
+    desc: 'Platform Owner',
+    email: 'danielkgitahi@gmail.com',
+    password: 'AdminSecure2026!#$',
+    icon: 'shield-checkmark',
+    badgeColor: '#F43F5E',
+  },
+  {
+    role: 'TENANT_ADMIN',
+    label: 'Tenant Admin',
+    desc: 'Stargaze ISP',
+    email: 'hnohh30@gmail.com',
+    password: 'AdminSecure2026!#$',
+    icon: 'business',
+    badgeColor: '#6366F1',
+  },
+  {
+    role: 'TECHNICIAN',
+    label: 'NOC Tech',
+    desc: 'Field Operations',
+    email: 'technician@stargaze.net',
+    password: 'AdminSecure2026!#$',
+    icon: 'construct',
+    badgeColor: '#10B981',
+  },
+  {
+    role: 'BILLING_ADMIN',
+    label: 'Billing',
+    desc: 'Finance & Payments',
+    email: 'billing@stargaze.net',
+    password: 'AdminSecure2026!#$',
+    icon: 'wallet',
+    badgeColor: '#F59E0B',
+  },
+  {
+    role: 'SUPPORT_AGENT',
+    label: 'Support',
+    desc: 'Helpdesk & CRM',
+    email: 'support@stargaze.net',
+    password: 'AdminSecure2026!#$',
+    icon: 'headset',
+    badgeColor: '#38BDF8',
+  },
+];
+
 export const LoginScreen: React.FC = () => {
   // Navigation mode
   const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');
@@ -523,6 +571,51 @@ export const LoginScreen: React.FC = () => {
                 <View style={styles.dividerLine} />
                 <Text style={styles.dividerText}>OR SIGN IN WITH EMAIL</Text>
                 <View style={styles.dividerLine} />
+              </View>
+
+              {/* Quick Select Role Accounts */}
+              <View style={styles.quickAccountsContainer}>
+                <Text style={styles.quickAccountsHeader}>QUICK SELECT OPERATOR ROLE:</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.quickAccountsScroll}
+                >
+                  {QUICK_OPERATOR_ACCOUNTS.map((acc) => {
+                    const isSelected = email.toLowerCase() === acc.email.toLowerCase();
+                    return (
+                      <TouchableOpacity
+                        key={acc.email}
+                        activeOpacity={0.75}
+                        onPress={() => {
+                          setEmail(acc.email);
+                          setPassword(acc.password);
+                          setErrorMessage(null);
+                        }}
+                        style={[
+                          styles.quickAccountCard,
+                          isSelected && {
+                            borderColor: acc.badgeColor,
+                            backgroundColor: `${acc.badgeColor}20`,
+                          },
+                        ]}
+                      >
+                        <View style={styles.quickAccountTop}>
+                          <Ionicons name={acc.icon as any} size={14} color={acc.badgeColor} />
+                          <Text
+                            style={[
+                              styles.quickAccountRole,
+                              { color: isSelected ? acc.badgeColor : COLORS.text },
+                            ]}
+                          >
+                            {acc.label}
+                          </Text>
+                        </View>
+                        <Text style={styles.quickAccountDesc}>{acc.desc}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
               </View>
 
               <View style={styles.inputGroup}>
@@ -1417,6 +1510,44 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textMuted,
     marginBottom: SPACING.xs,
+  },
+  quickAccountsContainer: {
+    marginBottom: SPACING.md,
+  },
+  quickAccountsHeader: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: COLORS.textMuted,
+    letterSpacing: 0.8,
+    marginBottom: SPACING.xs,
+  },
+  quickAccountsScroll: {
+    paddingVertical: 4,
+    gap: 8,
+  },
+  quickAccountCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.09)',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minWidth: 112,
+  },
+  quickAccountTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 2,
+  },
+  quickAccountRole: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: COLORS.text,
+  },
+  quickAccountDesc: {
+    fontSize: 10,
+    color: COLORS.textMuted,
   },
 });
 

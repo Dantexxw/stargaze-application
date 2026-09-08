@@ -31,7 +31,7 @@ type StatusFilter = 'all' | 'completed' | 'pending' | 'failed';
 
 export const CustomersPaymentsScreen: React.FC = () => {
   const user = useAuthStore((state) => state.user);
-  const isTechnician = user?.role === 'TECHNICIAN';
+  const isTechnician = user?.role === 'TECHNICIAN' || user?.role === 'SUPPORT_AGENT';
 
   const [viewMode, setViewMode] = useState<ViewMode>(
     isTechnician ? 'subscribers' : 'mpesa_stream'
@@ -148,7 +148,7 @@ export const CustomersPaymentsScreen: React.FC = () => {
       />
 
       {/* Quick Action Ribbon */}
-      <RoleGuard allowedRoles={['SUPER_ADMIN', 'TENANT_ADMIN']}>
+      <RoleGuard allowedRoles={['SUPER_ADMIN', 'TENANT_ADMIN', 'BILLING_ADMIN']}>
         <View style={styles.actionStripContainer}>
           <TouchableOpacity
             style={styles.stkActionBtn}
@@ -227,7 +227,7 @@ export const CustomersPaymentsScreen: React.FC = () => {
         {/* VIEW 1: FINANCIAL ANALYTICS & LIVE M-PESA STREAM */}
         {viewMode === 'mpesa_stream' && (
           <RoleGuard
-            allowedRoles={['SUPER_ADMIN', 'TENANT_ADMIN']}
+            allowedRoles={['SUPER_ADMIN', 'TENANT_ADMIN', 'BILLING_ADMIN']}
             showRestrictedCard
             featureTitle="Financial & Revenue Stream (Admin Clearance Required)"
           >

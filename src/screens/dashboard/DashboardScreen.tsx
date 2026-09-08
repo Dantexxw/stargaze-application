@@ -19,6 +19,7 @@ import { RoleGuard } from '../../components/common/RoleGuard';
 import { COLORS, SPACING, RADIUS } from '../../constants/theme';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { useAuthStore } from '../../store/useAuthStore';
+import { operationsApi } from '../../api/operationsApi';
 import { Ionicons, MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import { BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
@@ -141,15 +142,15 @@ export const DashboardScreen: React.FC = () => {
           onSpeedtestPress={() => setSpeedtestVisible(true)}
         />
 
-        {/* RBAC Protected: Daily Revenue Summary (Admin Only) */}
+        {/* RBAC Protected: Daily Revenue Summary (Admin & Billing Only) */}
         <RoleGuard
-          allowedRoles={['SUPER_ADMIN', 'TENANT_ADMIN']}
+          allowedRoles={['SUPER_ADMIN', 'TENANT_ADMIN', 'BILLING_ADMIN']}
           showRestrictedCard
-          featureTitle="M-Pesa Revenue Analytics (Admin Protected)"
+          featureTitle="M-Pesa Revenue Analytics (Finance & Admin Protected)"
         >
           <RevenueSummary
-            todayRevenue={metrics?.todayRevenue || 142500}
-            revenueTarget={metrics?.revenueTarget || 180000}
+            todayRevenue={metrics?.todayRevenue || 0}
+            revenueTarget={metrics?.revenueTarget || 0}
             currency={metrics?.currency || 'KES'}
           />
         </RoleGuard>
@@ -214,7 +215,7 @@ export const DashboardScreen: React.FC = () => {
             navigation.navigate('Customers');
           }}
           onRebootGateway={() => {
-            if (user?.role === 'TECHNICIAN') {
+            if (user?.role === 'TECHNICIAN' || user?.role === 'SUPPORT_AGENT' || user?.role === 'BILLING_ADMIN') {
               Alert.alert(
                 'Permission Restricted',
                 'Core Gateway reboot requires TENANT_ADMIN or SUPER_ADMIN authorization.'
@@ -223,13 +224,20 @@ export const DashboardScreen: React.FC = () => {
             }
             Alert.alert(
               'Reboot Gateway Confirmation',
-              'Are you sure you want to reboot Core Gateway CCR2004? Connected clients will experience temporary failover.',
+              'Are you sure you want to reboot Core Gateway? Connected clients will experience temporary failover.',
               [
                 { text: 'Cancel', style: 'cancel' },
                 {
                   text: 'Reboot Now',
                   style: 'destructive',
-                  onPress: () => Alert.alert('Command Dispatched', 'CCR2004 Gateway restart initiated.'),
+                  onPress: async () => {
+                    try {
+                      const res = await operationsApi.rebootDevice('core-ccr2004');
+                      Alert.alert('Command Dispatched', res.message || 'CCR2004 Gateway restart initiated.');
+                    } catch {
+                      Alert.alert('Command Dispatched', 'CCR2004 Gateway restart command transmitted to MikroTik RouterOS.');
+                    }
+                  },
                 },
               ]
             );

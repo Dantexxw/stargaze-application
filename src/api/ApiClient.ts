@@ -191,7 +191,14 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr as Error, null);
-        console.warn('[ApiClient] Token refresh notice:', refreshErr);
+        console.warn('[ApiClient] Token refresh failed:', refreshErr);
+        if (onAuthExpiredCallback) {
+          try {
+            onAuthExpiredCallback();
+          } catch (e) {
+            console.warn('[ApiClient] onAuthExpiredCallback error:', e);
+          }
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

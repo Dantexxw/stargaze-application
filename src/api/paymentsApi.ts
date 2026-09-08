@@ -48,26 +48,26 @@ export const paymentsApi = {
       const totalRevenue =
         Number(payAnalytics?.totalRevenue) ||
         Number(platformRes?.finance?.monthPayments) ||
-        3610;
+        0;
       const completedTxns =
         Number(payAnalytics?.totalCompleted) ||
         Number(platformRes?.finance?.monthTransactions) ||
-        232;
+        0;
       const customersCount =
-        Number(platformRes?.operations?.customers) || 131;
+        Number(platformRes?.operations?.customers) || 0;
       const avgTicket =
         Number(payAnalytics?.avgTicket) ||
-        (completedTxns > 0 ? totalRevenue / completedTxns : 15.56);
+        (completedTxns > 0 ? totalRevenue / completedTxns : 0);
       const completionRate =
         Number(payAnalytics?.completionRate) ||
-        (payAnalytics?.totalTransactions
+        (payAnalytics?.totalTransactions && payAnalytics.totalTransactions > 0
           ? Math.round((completedTxns / payAnalytics.totalTransactions) * 1000) / 10
-          : 77.1);
+          : 0);
 
       return {
         todayRevenue: totalRevenue,
         yesterdayRevenue: Math.round(totalRevenue * 0.88),
-        revenueGrowthPercent: 12.8,
+        revenueGrowthPercent: 0,
         activeSubscribers: customersCount,
         hotspotSalesCount: completedTxns,
         conversionRatePercent: completionRate,
@@ -79,15 +79,15 @@ export const paymentsApi = {
     } catch (err) {
       console.warn('[paymentsApi] Live VPS analytics fallback:', err);
       return {
-        todayRevenue: 3610,
-        yesterdayRevenue: 3200,
-        revenueGrowthPercent: 12.8,
-        activeSubscribers: 131,
-        hotspotSalesCount: 232,
-        conversionRatePercent: 77.1,
+        todayRevenue: 0,
+        yesterdayRevenue: 0,
+        revenueGrowthPercent: 0,
+        activeSubscribers: 0,
+        hotspotSalesCount: 0,
+        conversionRatePercent: 0,
         pppoeRevenue: 0,
-        hotspotRevenue: 3610,
-        averageTransactionValue: 15.56,
+        hotspotRevenue: 0,
+        averageTransactionValue: 0,
         currency: 'KES',
       };
     }
