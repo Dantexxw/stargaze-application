@@ -114,7 +114,7 @@ export const StkPushTerminalModal: React.FC<StkPushTerminalModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <Card variant="glow" glowColor={COLORS.emeraldGlow} style={styles.modalContent}>
           {/* Header */}

@@ -21,7 +21,30 @@ export const authApi = {
   },
 
   login: async (credentials: LoginRequest): Promise<LoginResponse> => {
-    return authApi.platformLogin(credentials);
+    try {
+      const response = await apiClient.post<any>('/auth/login', credentials);
+      const resData = response.data;
+      if (resData?.accessToken && resData?.user) {
+        return {
+          accessToken: resData.accessToken,
+          refreshToken: resData.refreshToken || '',
+          expiresIn: resData.expiresIn || 86400,
+          user: {
+            id: resData.user.id,
+            email: resData.user.email,
+            name: `${resData.user.firstName || ''} ${resData.user.lastName || ''}`.trim() || resData.user.email,
+            role: resData.user.role === 'PLATFORM_SUPER_ADMIN' ? 'SUPER_ADMIN' : (resData.user.role === 'NOC_OPERATOR' ? 'TECHNICIAN' : (resData.user.role || 'TENANT_ADMIN')),
+            phone: resData.user.phone || resData.user.phoneNumber || '+254 702 039 959',
+            tenantId: resData.user.tenantId || resData.user.tenant?.id || '4bf37180-9e84-488e-9a03-fd2502933e94',
+          },
+        };
+      }
+      return resData.data || resData;
+    } catch (err: any) {
+      // If error from backend has a message, propagate that message
+      const msg = err.response?.data?.message || err.message;
+      throw new Error(msg);
+    }
   },
 
   getProfile: async (): Promise<User> => {

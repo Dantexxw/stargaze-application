@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Modal,
   View,
@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { Card } from './Card';
 import { Badge } from './Badge';
@@ -30,9 +31,17 @@ export const TenantSelectorModal: React.FC<TenantSelectorModalProps> = ({
   const tenants = useTenantStore((state) => state.tenants);
   const currentTenant = useTenantStore((state) => state.currentTenant);
   const setCurrentTenant = useTenantStore((state) => state.setCurrentTenant);
+  const loadTenants = useTenantStore((state) => state.loadTenants);
+  const isLoading = useTenantStore((state) => state.isLoading);
   const user = useAuthStore((state) => state.user);
 
   const [search, setSearch] = useState('');
+
+  useEffect(() => {
+    if (visible && tenants.length === 0) {
+      loadTenants();
+    }
+  }, [visible, tenants.length, loadTenants]);
 
   // Filter tenants accessible to this user
   const accessibleTenants = tenants.filter((t) => {
@@ -58,7 +67,7 @@ export const TenantSelectorModal: React.FC<TenantSelectorModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <Card variant="glow" style={styles.modalContent}>
           {/* Header */}
@@ -90,50 +99,69 @@ export const TenantSelectorModal: React.FC<TenantSelectorModalProps> = ({
 
           {/* Tenant List */}
           <ScrollView style={styles.list}>
-            {filteredTenants.map((t) => {
-              const isSelected = currentTenant?.id === t.id;
-              return (
-                <TouchableOpacity
-                  key={t.id}
-                  activeOpacity={0.7}
-                  onPress={() => handleSelect(t)}
-                  style={[styles.tenantItem, isSelected && styles.tenantItemActive]}
-                >
-                  <View style={styles.itemLeft}>
-                    <View
-                      style={[
-                        styles.radioCircle,
-                        isSelected && styles.radioCircleSelected,
-                      ]}
-                    >
-                      {isSelected && <View style={styles.radioDot} />}
-                    </View>
-                    <View style={styles.itemInfo}>
-                      <View style={styles.nameRow}>
-                        <Text
-                          style={[
-                            styles.tenantName,
-                            isSelected && styles.tenantNameSelected,
-                          ]}
-                        >
-                          {t.name}
-                        </Text>
-                        <Text style={styles.tenantCode}>({t.code})</Text>
+            {isLoading ? (
+              <View style={{ paddingVertical: SPACING.xl, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={COLORS.primaryLight} />
+                <Text style={{ color: COLORS.textMuted, fontSize: 12, marginTop: SPACING.sm }}>
+                  Loading ISP branches...
+                </Text>
+              </View>
+            ) : filteredTenants.length === 0 ? (
+              <View style={{ paddingVertical: SPACING.xl, alignItems: 'center' }}>
+                <Ionicons name="business-outline" size={32} color={COLORS.textMuted} />
+                <Text style={{ color: COLORS.textSecondary, fontSize: 13, marginTop: SPACING.sm, fontWeight: '600' }}>
+                  No branches found
+                </Text>
+                <Text style={{ color: COLORS.textMuted, fontSize: 11, marginTop: 2 }}>
+                  All network territories will appear once provisioned.
+                </Text>
+              </View>
+            ) : (
+              filteredTenants.map((t) => {
+                const isSelected = currentTenant?.id === t.id;
+                return (
+                  <TouchableOpacity
+                    key={t.id}
+                    activeOpacity={0.7}
+                    onPress={() => handleSelect(t)}
+                    style={[styles.tenantItem, isSelected && styles.tenantItemActive]}
+                  >
+                    <View style={styles.itemLeft}>
+                      <View
+                        style={[
+                          styles.radioCircle,
+                          isSelected && styles.radioCircleSelected,
+                        ]}
+                      >
+                        {isSelected && <View style={styles.radioDot} />}
                       </View>
-                      <Text style={styles.tenantRegion}>{t.region}</Text>
-                      <Text style={styles.tenantStats}>
-                        {t.activeRouters} Routers • {t.activeSubscribers.toLocaleString()} Active
-                        Subscribers
-                      </Text>
+                      <View style={styles.itemInfo}>
+                        <View style={styles.nameRow}>
+                          <Text
+                            style={[
+                              styles.tenantName,
+                              isSelected && styles.tenantNameSelected,
+                            ]}
+                          >
+                            {t.name}
+                          </Text>
+                          <Text style={styles.tenantCode}>({t.code})</Text>
+                        </View>
+                        <Text style={styles.tenantRegion}>{t.region}</Text>
+                        <Text style={styles.tenantStats}>
+                          {t.activeRouters} Routers • {t.activeSubscribers.toLocaleString()} Active
+                          Subscribers
+                        </Text>
+                      </View>
                     </View>
-                  </View>
 
-                  {isSelected && (
-                    <Badge label="ACTIVE" variant="online" size="sm" />
-                  )}
-                </TouchableOpacity>
-              );
-            })}
+                    {isSelected && (
+                      <Badge label="ACTIVE" variant="online" size="sm" />
+                    )}
+                  </TouchableOpacity>
+                );
+              })
+            )}
           </ScrollView>
         </Card>
       </View>

@@ -59,6 +59,17 @@ interface RegisteredOperator {
 
 const registeredOperators: Map<string, RegisteredOperator> = new Map([
   [
+    'danielkgitahi@gmail.com',
+    {
+      uid: 'caf1a4f1-7950-43ff-98d1-ab0b9f8a3c6a',
+      email: 'danielkgitahi@gmail.com',
+      password: 'AdminSecure2026!#$',
+      displayName: 'Daniel Gitahi',
+      phone: '+254 702 039 959',
+      role: 'SUPER_ADMIN',
+    },
+  ],
+  [
     'superadmin@stargaze.net',
     {
       uid: 'uid-superadmin-001',

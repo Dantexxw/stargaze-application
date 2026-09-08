@@ -4,14 +4,13 @@ import {
   Text,
   TextInput,
   StyleSheet,
-  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   TouchableOpacity,
   Alert,
   ActivityIndicator,
-  Modal,
+  StatusBar,
 } from 'react-native';
 import { COLORS, SPACING, RADIUS } from '../../theme/Theme';
 import { Button } from '../../components/common/Button';
@@ -70,6 +69,7 @@ export const LoginScreen: React.FC = () => {
   const savedEmail = useAuthStore((state) => state.savedEmail);
   const loginWithBiometrics = useAuthStore((state) => state.loginWithBiometrics);
   const currentTenant = useTenantStore((state) => state.currentTenant);
+  const loadTenants = useTenantStore((state) => state.loadTenants);
 
   useEffect(() => {
     checkBiometricSupport().then(() => {
@@ -132,9 +132,11 @@ export const LoginScreen: React.FC = () => {
       }
 
       const knownRoles: Record<string, UserRole> = {
+        'danielkgitahi@gmail.com': 'SUPER_ADMIN',
         'superadmin@stargaze.net': 'SUPER_ADMIN',
         'admin@stargaze.net': 'TENANT_ADMIN',
         'technician@stargaze.net': 'TECHNICIAN',
+        'ghostdantexxd@gmail.com': 'TECHNICIAN',
       };
       if (knownRoles[userEmail]) userRole = knownRoles[userEmail];
 
@@ -146,7 +148,7 @@ export const LoginScreen: React.FC = () => {
           role: userRole,
           avatarUrl: userData?.photo || undefined,
           phone: '',
-          tenantId: currentTenant?.id || 'tenant-main-nairobi',
+          tenantId: currentTenant?.id || '4bf37180-9e84-488e-9a03-fd2502933e94',
         },
         accessToken: idToken || `google-tok-${Date.now()}`,
         refreshToken: '',
@@ -160,6 +162,8 @@ export const LoginScreen: React.FC = () => {
         setErrorMessage('Sign-In Already In Progress');
       } else if (err.code === statusCodes.PLAY_SERVICES_NOT_AVAILABLE) {
         setErrorMessage('Google Play Services Not Available');
+      } else if (err.message && err.message.includes('DEVELOPER_ERROR')) {
+        setErrorMessage('Google Account detected. Register your debug SHA-1 in Firebase Console to finalize cloud token.');
       } else {
         setErrorMessage(err.message || 'Google Authentication Failed. Please Try Again.');
       }
@@ -168,9 +172,7 @@ export const LoginScreen: React.FC = () => {
     }
   };
 
-
-
-  // Handle Firebase + Platform Email & Password Login
+  // Handle Live Platform (hotspotwispman) + Operator Email & Password Login
   const handleLogin = async () => {
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -183,41 +185,64 @@ export const LoginScreen: React.FC = () => {
 
     setLoading(true);
     try {
-      const fbUser = await firebaseSignIn(cleanEmail, password);
+      let loggedIn = false;
 
-      let userRole: UserRole = fbUser.role || 'TECHNICIAN';
-      let displayName = fbUser.displayName || cleanEmail.split('@')[0];
-      let userPhone = fbUser.phoneNumber || '+254 700 000 000';
-
-      if (!fbUser.role) {
-        if (cleanEmail.includes('super') || cleanEmail.includes('director') || cleanEmail.includes('owner')) {
-          userRole = 'SUPER_ADMIN';
-          displayName = fbUser.displayName || 'Super Admin Core NOC';
-          userPhone = '+254 711 000 001';
-        } else if (cleanEmail.includes('admin') || cleanEmail.includes('manager') || cleanEmail.includes('branch')) {
-          userRole = 'TENANT_ADMIN';
-          displayName = fbUser.displayName || 'Nairobi Branch Admin';
-          userPhone = '+254 711 000 002';
-        } else if (cleanEmail.includes('tech') || cleanEmail.includes('field') || cleanEmail.includes('engineer')) {
-          userRole = 'TECHNICIAN';
-          displayName = fbUser.displayName || 'Field Network Engineer';
-          userPhone = '+254 711 000 003';
+      // 1. Authenticate against Live VPS Backend (hotspotwispman production system)
+      try {
+        const vpsRes = await authApi.login({ email: cleanEmail, password });
+        if (vpsRes?.accessToken && vpsRes?.user) {
+          await setAuth({
+            user: vpsRes.user,
+            accessToken: vpsRes.accessToken,
+            refreshToken: vpsRes.refreshToken,
+          });
+          // Load real tenants from VPS after login
+          loadTenants().catch(() => {});
+          setSuccessMessage(`Signed In As ${vpsRes.user.name || vpsRes.user.email}`);
+          loggedIn = true;
         }
+      } catch (vpsErr: any) {
+        console.log('[Auth] Live VPS auth notice:', vpsErr.message);
       }
 
-      const idToken = (await fbUser.getIdToken?.()) || `fb-tok-${Date.now()}`;
-      await setAuth({
-        user: {
-          id: fbUser.uid,
-          email: fbUser.email || cleanEmail,
-          name: displayName,
-          role: userRole,
-          phone: userPhone,
-          tenantId: currentTenant?.id || 'tenant-main-nairobi',
-        },
-        accessToken: idToken,
-        refreshToken: fbUser.refreshToken,
-      });
+      // 2. Fallback to Firebase / Authorized Operator Registry
+      if (!loggedIn) {
+        const fbUser = await firebaseSignIn(cleanEmail, password);
+
+        let userRole: UserRole = fbUser.role || 'TECHNICIAN';
+        let displayName = fbUser.displayName || cleanEmail.split('@')[0];
+        let userPhone = fbUser.phoneNumber || '+254 700 000 000';
+
+        if (!fbUser.role) {
+          if (cleanEmail.includes('danielkgitahi') || cleanEmail.includes('super') || cleanEmail.includes('director') || cleanEmail.includes('owner')) {
+            userRole = 'SUPER_ADMIN';
+            displayName = fbUser.displayName || 'Daniel Gitahi';
+            userPhone = '+254 702 039 959';
+          } else if (cleanEmail.includes('admin') || cleanEmail.includes('manager') || cleanEmail.includes('branch')) {
+            userRole = 'TENANT_ADMIN';
+            displayName = fbUser.displayName || 'Nairobi Branch Admin';
+            userPhone = '+254 711 000 002';
+          } else if (cleanEmail.includes('tech') || cleanEmail.includes('field') || cleanEmail.includes('engineer') || cleanEmail.includes('ghost')) {
+            userRole = 'TECHNICIAN';
+            displayName = fbUser.displayName || 'Field Network Engineer';
+            userPhone = '+254 711 000 003';
+          }
+        }
+
+        const idToken = (await fbUser.getIdToken?.()) || `fb-tok-${Date.now()}`;
+        await setAuth({
+          user: {
+            id: fbUser.uid,
+            email: fbUser.email || cleanEmail,
+            name: displayName,
+            role: userRole,
+            phone: userPhone,
+            tenantId: currentTenant?.id || '4bf37180-9e84-488e-9a03-fd2502933e94',
+          },
+          accessToken: idToken,
+          refreshToken: fbUser.refreshToken,
+        });
+      }
 
       // Prompt for biometric setup if hardware supported and not already enabled
       if (bioSupported && !isBiometricEnabled) {
@@ -241,8 +266,28 @@ export const LoginScreen: React.FC = () => {
         );
       }
     } catch (err: any) {
-      const msg = err.code ? getFirebaseErrorMessage(err.code) : err.message;
-      setErrorMessage(msg || 'Authentication failed. Please verify your credentials.');
+      // Extract a human-readable message from VPS or Firebase errors
+      let msg = 'Authentication failed. Please verify your credentials.';
+      if (err?.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err?.message) {
+        // Map common VPS error messages to user-friendly text
+        const raw: string = err.message;
+        if (raw.includes('locked')) {
+          msg = '⚠️ Too many failed attempts. Account is temporarily locked — try again in 15 minutes.';
+        } else if (raw.includes('Invalid email or password')) {
+          msg = 'Invalid email or password. Please try again.';
+        } else if (raw.includes('deactivated')) {
+          msg = 'Your account has been deactivated. Contact the administrator.';
+        } else if (raw.includes('awaiting')) {
+          msg = 'Your account is pending approval by the Platform Administrator.';
+        } else if (err.code) {
+          msg = getFirebaseErrorMessage(err.code);
+        } else {
+          msg = raw;
+        }
+      }
+      setErrorMessage(msg);
     } finally {
       setLoading(false);
     }
@@ -354,9 +399,10 @@ export const LoginScreen: React.FC = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <StatusBar barStyle="light-content" backgroundColor="transparent" translucent />
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         style={styles.keyboardView}
       >
         <ScrollView contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
@@ -845,7 +891,7 @@ export const LoginScreen: React.FC = () => {
       </KeyboardAvoidingView>
 
 
-    </SafeAreaView>
+    </View>
   );
 };
 
@@ -853,15 +899,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
+    borderWidth: 0,
+    overflow: 'hidden',
   },
   keyboardView: {
     flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
-    padding: SPACING.lg,
-    paddingTop: SPACING.xl,
+    paddingHorizontal: SPACING.lg,
+    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : SPACING.xl,
+    paddingBottom: 48,
   },
   brandingBox: {
     alignItems: 'center',

@@ -63,11 +63,12 @@ apiClient.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
 
-      // 2. Extract and inject x-tenant-id header
+      // 2. Extract and inject x-tenant-id header only if valid UUID
       const storedTenant = await SecureStorage.getActiveTenant();
-      const tenantId = storedTenant?.id || 'tenant-main-nairobi';
+      const tenantId = storedTenant?.id;
+      const isUuid = !!tenantId && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenantId);
 
-      if (tenantId && config.headers) {
+      if (isUuid && config.headers) {
         config.headers['x-tenant-id'] = tenantId;
       }
     } catch (err) {
@@ -158,7 +159,9 @@ apiClient.interceptors.response.use(
           {
             headers: {
               'Content-Type': 'application/json',
-              'x-tenant-id': storedTenant?.id || 'tenant-main-nairobi',
+              ...(storedTenant?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storedTenant.id)
+                ? { 'x-tenant-id': storedTenant.id }
+                : {}),
             },
           }
         );

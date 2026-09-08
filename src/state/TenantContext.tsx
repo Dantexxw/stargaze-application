@@ -22,13 +22,19 @@ export const TenantProvider: React.FC<{ children: ReactNode }> = ({ children }) 
   const isLoading = useTenantStore((state) => state.isLoading);
   const setCurrentTenant = useTenantStore((state) => state.setCurrentTenant);
   const loadPersistedTenant = useTenantStore((state) => state.loadPersistedTenant);
+  const loadTenants = useTenantStore((state) => state.loadTenants);
 
   const user = useAuthStore((state) => state.user);
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
   const isSuperAdmin = user?.role === 'SUPER_ADMIN';
 
   useEffect(() => {
-    loadPersistedTenant();
-  }, [loadPersistedTenant]);
+    loadPersistedTenant().then(() => {
+      if (isAuthenticated) {
+        loadTenants();
+      }
+    });
+  }, [loadPersistedTenant, loadTenants, isAuthenticated]);
 
   const accessibleTenants = tenants.filter((t) => {
     if (isSuperAdmin) return true;

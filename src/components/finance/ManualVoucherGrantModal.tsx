@@ -82,7 +82,7 @@ export const ManualVoucherGrantModal: React.FC<ManualVoucherGrantModalProps> = (
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <Card variant="glow" style={styles.modalContent}>
           {/* Header */}

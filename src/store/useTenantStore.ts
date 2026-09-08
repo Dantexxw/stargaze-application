@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Tenant } from '../types/models';
 import { secureStorage } from '../utils/secureStorage';
 import { STORAGE_KEYS } from '../constants/config';
+import { tenantApi } from '../api/tenantApi';
 
 interface TenantState {
   currentTenant: Tenant | null;
@@ -10,39 +11,12 @@ interface TenantState {
   setCurrentTenant: (tenant: Tenant) => Promise<void>;
   setTenants: (tenants: Tenant[]) => void;
   loadPersistedTenant: () => Promise<void>;
+  loadTenants: () => Promise<void>;
 }
 
-const DEFAULT_TENANTS: Tenant[] = [
-  {
-    id: 'tenant-main-nairobi',
-    name: 'Nairobi Central Core ISP',
-    code: 'NBO-01',
-    region: 'Nairobi CBD & Westlands',
-    activeRouters: 24,
-    activeSubscribers: 1420,
-    isPrimary: true,
-  },
-  {
-    id: 'tenant-coast-mombasa',
-    name: 'Mombasa Coastal Hub',
-    code: 'MBA-02',
-    region: 'Coast & Nyali Beach',
-    activeRouters: 12,
-    activeSubscribers: 680,
-  },
-  {
-    id: 'tenant-rift-eldoret',
-    name: 'Eldoret Agri-Net Hotspots',
-    code: 'ELD-03',
-    region: 'Rift Valley & University Area',
-    activeRouters: 8,
-    activeSubscribers: 410,
-  },
-];
-
 export const useTenantStore = create<TenantState>((set, get) => ({
-  currentTenant: DEFAULT_TENANTS[0],
-  tenants: DEFAULT_TENANTS,
+  currentTenant: null,
+  tenants: [],
   isLoading: false,
 
   setCurrentTenant: async (tenant: Tenant) => {
@@ -63,6 +37,21 @@ export const useTenantStore = create<TenantState>((set, get) => ({
       }
     } catch (err) {
       console.warn('[useTenantStore] Failed to load persisted tenant', err);
+    }
+  },
+
+  loadTenants: async () => {
+    set({ isLoading: true });
+    try {
+      const tenants = await tenantApi.getTenants();
+      set({ tenants, isLoading: false });
+      // Auto-select first tenant if none selected
+      if (!get().currentTenant && tenants.length > 0) {
+        await get().setCurrentTenant(tenants[0]);
+      }
+    } catch (err) {
+      console.warn('[useTenantStore] Failed to load tenants from VPS', err);
+      set({ isLoading: false });
     }
   },
 }));

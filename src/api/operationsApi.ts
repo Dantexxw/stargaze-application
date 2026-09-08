@@ -10,14 +10,87 @@ import {
   PingResult,
 } from '../types/models';
 
+/** Maps VPS /dashboard/operations OR /dashboard/platform response → DashboardMetrics */
+function mapVpsDashboard(vps: any): DashboardMetrics {
+  // Platform dashboard shape: { tenants, network, operations, finance }
+  // Operations dashboard shape: { clients, plans, usage, payments, support }
+  const isPlatform = Boolean(vps?.tenants);
+
+  const activeSubscribers = isPlatform
+    ? (vps.operations?.customers ?? 0)
+    : (vps.clients?.total ?? 0);
+
+  const onlineGateways = isPlatform
+    ? (vps.network?.onlineRouters ?? 0)
+    : (vps.usage?.liveSessions ?? 0);
+
+  const totalGateways = isPlatform
+    ? (vps.network?.routers ?? 0)
+    : (vps.usage?.recentSessions ?? 0);
+
+  const todayRevenue = isPlatform
+    ? (vps.finance?.monthPayments ?? 0)
+    : (vps.payments?.recent ?? 0);
+
+  const openTickets = isPlatform
+    ? (vps.operations?.openTickets ?? 0)
+    : (vps.support?.open ?? 0);
+
+  const activeHotspotUsers = isPlatform ? 0 : (vps.clients?.hotspot ?? 0);
+
+  const dataIssues: number = vps.system?.dataQualityIssues ?? 0;
+  const systemHealth: DashboardMetrics['systemHealth'] =
+    dataIssues > 100 || openTickets > 50 ? 'critical'
+    : dataIssues > 20 || openTickets > 20 ? 'warning'
+    : 'optimal';
+
+  return {
+    activeSubscribers,
+    totalSubscribers: activeSubscribers,
+    activeHotspotUsers,
+    onlineGateways,
+    totalGateways,
+    todayRevenue,
+    revenueTarget: 0,
+    currency: 'KES',
+    downloadSpeedMbps: 0,
+    uploadSpeedMbps: 0,
+    peakBandwidthMbps: 0,
+    totalDataTransferredGB: 0,
+    systemHealth,
+    unresolvedAlerts: openTickets,
+  };
+}
+
 export const operationsApi = {
   getDashboardMetrics: async (): Promise<DashboardMetrics> => {
     try {
-      const response = await apiClient.get<ApiResponse<DashboardMetrics>>('/dashboard/operations');
-      return response.data.data || (response.data as any);
+      const response = await apiClient.get<any>('/dashboard/operations');
+      const raw = response.data.data ?? response.data;
+      return mapVpsDashboard(raw);
     } catch {
-      const response = await apiClient.get<ApiResponse<DashboardMetrics>>('/dashboard/platform');
-      return response.data.data || (response.data as any);
+      try {
+        const response = await apiClient.get<any>('/dashboard/platform');
+        const raw = response.data.data ?? response.data;
+        return mapVpsDashboard(raw);
+      } catch {
+        return {
+          activeSubscribers: 0,
+          totalSubscribers: 0,
+          activeHotspotUsers: 0,
+          onlineGateways: 0,
+          totalGateways: 0,
+          todayRevenue: 0,
+          revenueTarget: 0,
+          currency: 'KES',
+          downloadSpeedMbps: 0,
+          uploadSpeedMbps: 0,
+          peakBandwidthMbps: 0,
+          totalDataTransferredGB: 0,
+          systemHealth: 'warning',
+          unresolvedAlerts: 0,
+        };
+      }
     }
   },
 

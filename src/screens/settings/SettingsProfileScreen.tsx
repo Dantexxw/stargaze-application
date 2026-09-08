@@ -206,9 +206,13 @@ export const SettingsProfileScreen: React.FC = () => {
             <View style={styles.tenantLeft}>
               <Ionicons name="business" size={22} color={COLORS.primaryLight} />
               <View style={styles.tenantTextContainer}>
-                <Text style={styles.tenantName}>{currentTenant?.name}</Text>
+                <Text style={styles.tenantName}>
+                  {currentTenant?.name || 'All ISP Branches / Territories'}
+                </Text>
                 <Text style={styles.tenantCode}>
-                  {currentTenant?.code} • {currentTenant?.region}
+                  {currentTenant
+                    ? `${currentTenant.code} • ${currentTenant.region}`
+                    : 'Super Admin Global Scope'}
                 </Text>
               </View>
             </View>

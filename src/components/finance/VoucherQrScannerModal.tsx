@@ -54,7 +54,7 @@ export const VoucherQrScannerModal: React.FC<VoucherQrScannerModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <Card variant="glow" glowColor={COLORS.primaryGlow} style={styles.modalContent}>
           {/* Header */}

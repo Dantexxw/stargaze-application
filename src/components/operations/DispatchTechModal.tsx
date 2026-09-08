@@ -98,7 +98,7 @@ export const DispatchTechModal: React.FC<DispatchTechModalProps> = ({
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide">
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <Card variant="glow" glowColor={COLORS.roseGlow} style={styles.modalContent}>
           {/* Header */}
