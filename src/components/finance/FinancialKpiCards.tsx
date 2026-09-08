@@ -13,15 +13,15 @@ interface FinancialKpiCardsProps {
 
 export const FinancialKpiCards: React.FC<FinancialKpiCardsProps> = ({ analytics }) => {
   const data = analytics || {
-    todayRevenue: 142500,
-    yesterdayRevenue: 126800,
-    revenueGrowthPercent: 12.4,
-    activeSubscribers: 1842,
-    hotspotSalesCount: 348,
-    conversionRatePercent: 68.5,
-    pppoeRevenue: 108000,
-    hotspotRevenue: 34500,
-    averageTransactionValue: 409.5,
+    todayRevenue: 3610,
+    yesterdayRevenue: 3200,
+    revenueGrowthPercent: 12.8,
+    activeSubscribers: 131,
+    hotspotSalesCount: 232,
+    conversionRatePercent: 77.1,
+    pppoeRevenue: 0,
+    hotspotRevenue: 3610,
+    averageTransactionValue: 15.56,
     currency: 'KES',
   };
 

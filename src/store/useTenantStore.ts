@@ -45,9 +45,13 @@ export const useTenantStore = create<TenantState>((set, get) => ({
     try {
       const tenants = await tenantApi.getTenants();
       set({ tenants, isLoading: false });
-      // Auto-select first tenant if none selected
-      if (!get().currentTenant && tenants.length > 0) {
-        await get().setCurrentTenant(tenants[0]);
+      // Auto-select STARGAZE pilot tenant if available, or first tenant
+      const activeCurrent = get().currentTenant;
+      if (!activeCurrent || activeCurrent.id === 'a9f3e6c5-16af-481c-ad23-66562c4cb217') {
+        const pilot = tenants.find((t) => t.name.toUpperCase().includes('STARGAZE')) || tenants[0];
+        if (pilot) {
+          await get().setCurrentTenant(pilot);
+        }
       }
     } catch (err) {
       console.warn('[useTenantStore] Failed to load tenants from VPS', err);

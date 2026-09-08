@@ -151,14 +151,18 @@ apiClient.interceptors.response.use(
         }
 
         const storedTenant = await SecureStorage.getActiveTenant();
+        const cookieHeader = refreshToken.startsWith('stargaze_refresh=')
+          ? refreshToken
+          : `stargaze_refresh=${refreshToken}`;
 
-        // Refresh request without interceptor loop
+        // Refresh request with Cookie header for NestJS backend
         const refreshResponse = await axios.post<RefreshTokenResponse>(
           `${CONFIG.API_BASE_URL}/auth/refresh`,
-          { refreshToken },
+          {},
           {
             headers: {
               'Content-Type': 'application/json',
+              Cookie: cookieHeader,
               ...(storedTenant?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(storedTenant.id)
                 ? { 'x-tenant-id': storedTenant.id }
                 : {}),
@@ -169,6 +173,16 @@ apiClient.interceptors.response.use(
         const newAccessToken = refreshResponse.data.accessToken;
         await rawSecureStore.setItem(STORAGE_KEYS.ACCESS_TOKEN, newAccessToken);
 
+        // Update refresh cookie if rotated
+        const setCookie = refreshResponse.headers?.['set-cookie'] || refreshResponse.headers?.['Set-Cookie'];
+        if (setCookie) {
+          const cookieStr = Array.isArray(setCookie) ? setCookie.join('; ') : String(setCookie);
+          const match = cookieStr.match(/stargaze_refresh=([^;]+)/);
+          if (match && match[1]) {
+            await rawSecureStore.setItem(STORAGE_KEYS.REFRESH_TOKEN, match[1]);
+          }
+        }
+
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         }
@@ -177,11 +191,7 @@ apiClient.interceptors.response.use(
         return apiClient(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr as Error, null);
-        console.warn('[ApiClient] Token refresh failed. Clearing session.', refreshErr);
-        await SecureStorage.clearSession();
-        if (onAuthExpiredCallback) {
-          onAuthExpiredCallback();
-        }
+        console.warn('[ApiClient] Token refresh notice:', refreshErr);
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

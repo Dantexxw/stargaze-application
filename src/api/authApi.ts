@@ -25,9 +25,19 @@ export const authApi = {
       const response = await apiClient.post<any>('/auth/login', credentials);
       const resData = response.data;
       if (resData?.accessToken && resData?.user) {
+        let refreshToken = resData.refreshToken || '';
+        const setCookie = response.headers?.['set-cookie'] || response.headers?.['Set-Cookie'];
+        if (setCookie) {
+          const cookieStr = Array.isArray(setCookie) ? setCookie.join('; ') : String(setCookie);
+          const match = cookieStr.match(/stargaze_refresh=([^;]+)/);
+          if (match && match[1]) {
+            refreshToken = match[1];
+          }
+        }
+
         return {
           accessToken: resData.accessToken,
-          refreshToken: resData.refreshToken || '',
+          refreshToken,
           expiresIn: resData.expiresIn || 86400,
           user: {
             id: resData.user.id,
