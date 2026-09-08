@@ -5,6 +5,8 @@ export type MainTabParamList = {
   Dashboard: undefined;
   Operations: undefined;
   Customers: undefined;
+  Support: undefined;
+  Platform: undefined;
   Settings: undefined;
 };
 

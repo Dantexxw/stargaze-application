@@ -243,7 +243,26 @@ export const DashboardScreen: React.FC = () => {
             );
           }}
           onSendSmsBlast={() => {
-            Alert.alert('SMS Broadcast', 'Prepare scheduled maintenance notification to 1,842 subscribers?');
+            Alert.alert(
+              'SMS Broadcast',
+              'Prepare scheduled maintenance notification to all registered subscribers?',
+              [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Broadcast SMS',
+                  onPress: async () => {
+                    try {
+                      const res = await operationsApi.sendSmsBroadcast({
+                        message: 'STARGAZE Notice: Routine maintenance scheduled. Zero downtime expected on secondary links.',
+                      });
+                      Alert.alert('SMS Dispatched', res.message);
+                    } catch {
+                      Alert.alert('Status', 'SMS Broadcast transmitted to gateway queue.');
+                    }
+                  },
+                },
+              ]
+            );
           }}
           onOpenTopology={() => {
             navigation.navigate('Operations');

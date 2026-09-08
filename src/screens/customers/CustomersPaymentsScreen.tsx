@@ -24,12 +24,16 @@ import { COLORS, SPACING, RADIUS } from '../../constants/theme';
 import { usePayments } from '../../hooks/usePayments';
 import { useFinancialAnalytics } from '../../hooks/useFinancialAnalytics';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../types/navigation';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 type ViewMode = 'mpesa_stream' | 'subscribers';
 type StatusFilter = 'all' | 'completed' | 'pending' | 'failed';
 
 export const CustomersPaymentsScreen: React.FC = () => {
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const user = useAuthStore((state) => state.user);
   const isTechnician = user?.role === 'TECHNICIAN' || user?.role === 'SUPPORT_AGENT';
 
@@ -296,6 +300,7 @@ export const CustomersPaymentsScreen: React.FC = () => {
               <LiveMpesaTransactionRow
                 key={tx.id}
                 transaction={tx}
+                onPress={() => navigation.navigate('TransactionDetail', { transaction: tx })}
                 onGrantBonusPress={handleOpenGrantModal}
               />
             ))}
@@ -320,45 +325,51 @@ export const CustomersPaymentsScreen: React.FC = () => {
             </View>
 
             {filteredSubscribers.map((sub) => (
-              <Card key={sub.id} style={styles.subCard}>
-                <View style={styles.subHeader}>
-                  <View style={styles.subLeft}>
-                    <Text style={styles.subName}>{sub.name}</Text>
-                    <Text style={styles.subAccount}>
-                      {sub.accountNumber} • {sub.phone}
-                    </Text>
+              <TouchableOpacity
+                key={sub.id}
+                activeOpacity={0.8}
+                onPress={() => navigation.navigate('SubscriberDetail', { subscriber: sub })}
+              >
+                <Card style={styles.subCard}>
+                  <View style={styles.subHeader}>
+                    <View style={styles.subLeft}>
+                      <Text style={styles.subName}>{sub.name}</Text>
+                      <Text style={styles.subAccount}>
+                        {sub.accountNumber} • {sub.phone}
+                      </Text>
+                    </View>
+                    <Badge
+                      label={sub.status.toUpperCase()}
+                      variant={sub.status === 'active' ? 'online' : 'danger'}
+                      size="sm"
+                    />
                   </View>
-                  <Badge
-                    label={sub.status.toUpperCase()}
-                    variant={sub.status === 'active' ? 'online' : 'danger'}
-                    size="sm"
-                  />
-                </View>
 
-                <View style={styles.subDetailsRow}>
-                  <View style={styles.subDetail}>
-                    <Text style={styles.subDetailLabel}>Plan</Text>
-                    <Text style={styles.subDetailValue}>{sub.planName}</Text>
+                  <View style={styles.subDetailsRow}>
+                    <View style={styles.subDetail}>
+                      <Text style={styles.subDetailLabel}>Plan</Text>
+                      <Text style={styles.subDetailValue}>{sub.planName}</Text>
+                    </View>
+                    <View style={styles.subDetail}>
+                      <Text style={styles.subDetailLabel}>Profile</Text>
+                      <Text style={styles.subDetailValue}>{sub.bandwidthProfile}</Text>
+                    </View>
+                    <View style={styles.subDetail}>
+                      <Text style={styles.subDetailLabel}>Data Used</Text>
+                      <Text style={styles.subDetailValue}>{sub.dataUsedGB} GB</Text>
+                    </View>
                   </View>
-                  <View style={styles.subDetail}>
-                    <Text style={styles.subDetailLabel}>Profile</Text>
-                    <Text style={styles.subDetailValue}>{sub.bandwidthProfile}</Text>
-                  </View>
-                  <View style={styles.subDetail}>
-                    <Text style={styles.subDetailLabel}>Data Used</Text>
-                    <Text style={styles.subDetailValue}>{sub.dataUsedGB} GB</Text>
-                  </View>
-                </View>
 
-                {sub.macAddress && (
-                  <View style={styles.subIpRow}>
-                    <Ionicons name="hardware-chip-outline" size={12} color={COLORS.cyan} />
-                    <Text style={styles.subIpText}>
-                      MAC: {sub.macAddress} (IP: {sub.ipAddress || 'Dynamic'})
-                    </Text>
-                  </View>
-                )}
-              </Card>
+                  {sub.macAddress && (
+                    <View style={styles.subIpRow}>
+                      <Ionicons name="hardware-chip-outline" size={12} color={COLORS.cyan} />
+                      <Text style={styles.subIpText}>
+                        MAC: {sub.macAddress} (IP: {sub.ipAddress || 'Dynamic'})
+                      </Text>
+                    </View>
+                  )}
+                </Card>
+              </TouchableOpacity>
             ))}
           </View>
         )}

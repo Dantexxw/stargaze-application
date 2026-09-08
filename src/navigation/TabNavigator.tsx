@@ -5,6 +5,9 @@ import { DashboardScreen } from '../screens/dashboard/DashboardScreen';
 import { OperationsScreen } from '../screens/operations/OperationsScreen';
 import { CustomersPaymentsScreen } from '../screens/customers/CustomersPaymentsScreen';
 import { SettingsProfileScreen } from '../screens/settings/SettingsProfileScreen';
+import { SupportTicketsScreen } from '../screens/tickets/SupportTicketsScreen';
+import { PlatformDashboardScreen } from '../screens/platform/PlatformDashboardScreen';
+import { useAuthStore } from '../store/useAuthStore';
 import { COLORS, SPACING } from '../theme/Theme';
 import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 import { StyleSheet, Platform } from 'react-native';
@@ -12,6 +15,10 @@ import { StyleSheet, Platform } from 'react-native';
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
 export const TabNavigator: React.FC = () => {
+  const user = useAuthStore((state) => state.user);
+  const isSuperAdmin = user?.role === 'SUPER_ADMIN';
+  const isSupportOrTech = user?.role === 'SUPPORT_AGENT' || user?.role === 'TECHNICIAN';
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -37,11 +44,28 @@ export const TabNavigator: React.FC = () => {
         }}
       />
 
+      {isSuperAdmin && (
+        <Tab.Screen
+          name="Platform"
+          component={PlatformDashboardScreen}
+          options={{
+            tabBarLabel: 'Fleet',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'business' : 'business-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+      )}
+
       <Tab.Screen
         name="Operations"
         component={OperationsScreen}
         options={{
-          tabBarLabel: 'Live Operations',
+          tabBarLabel: 'Live Ops',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'git-network' : 'git-network-outline'}
@@ -52,11 +76,28 @@ export const TabNavigator: React.FC = () => {
         }}
       />
 
+      {isSupportOrTech && (
+        <Tab.Screen
+          name="Support"
+          component={SupportTicketsScreen}
+          options={{
+            tabBarLabel: 'Tickets',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'headset' : 'headset-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+      )}
+
       <Tab.Screen
         name="Customers"
         component={CustomersPaymentsScreen}
         options={{
-          tabBarLabel: 'M-Pesa Revenue',
+          tabBarLabel: 'Revenue',
           tabBarIcon: ({ color, size }) => (
             <FontAwesome5 name="money-bill-wave" size={size - 4} color={color} />
           ),
@@ -67,7 +108,7 @@ export const TabNavigator: React.FC = () => {
         name="Settings"
         component={SettingsProfileScreen}
         options={{
-          tabBarLabel: 'Settings & Dispatch',
+          tabBarLabel: 'Settings',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
               name={focused ? 'settings' : 'settings-outline'}

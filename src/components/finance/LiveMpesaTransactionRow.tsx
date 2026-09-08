@@ -9,17 +9,23 @@ import { Ionicons, FontAwesome5 } from '@expo/vector-icons';
 
 interface LiveMpesaTransactionRowProps {
   transaction: MpesaTransaction;
+  onPress?: () => void;
   onGrantBonusPress?: (macAddress?: string, phone?: string) => void;
 }
 
 export const LiveMpesaTransactionRow: React.FC<LiveMpesaTransactionRowProps> = ({
   transaction,
+  onPress,
   onGrantBonusPress,
 }) => {
   const isSuccess = transaction.status === 'completed';
   const isPending = transaction.status === 'pending';
 
   const handleRowPress = () => {
+    if (onPress) {
+      onPress();
+      return;
+    }
     Alert.alert(
       `M-Pesa Receipt: ${transaction.receiptNumber}`,
       `Customer: ${transaction.customerName}\nPhone: ${transaction.phoneNumber}\nAmount: ${formatCurrency(

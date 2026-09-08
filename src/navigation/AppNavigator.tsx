@@ -5,6 +5,8 @@ import { TabNavigator } from './TabNavigator';
 import { LoginScreen } from '../screens/auth/LoginScreen';
 import { useAuthStore } from '../store/useAuthStore';
 import { useTenantStore } from '../store/useTenantStore';
+import { SubscriberDetailScreen } from '../screens/details/SubscriberDetailScreen';
+import { TransactionDetailScreen } from '../screens/details/TransactionDetailScreen';
 import { setOnAuthExpired } from '../api/ApiClient';
 import { ActivityIndicator, View, StyleSheet } from 'react-native';
 import { COLORS } from '../constants/theme';
@@ -37,7 +39,11 @@ export const AppNavigator: React.FC = () => {
   return (
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       {isAuthenticated ? (
-        <Stack.Screen name="Main" component={TabNavigator} />
+        <>
+          <Stack.Screen name="Main" component={TabNavigator} />
+          <Stack.Screen name="SubscriberDetail" component={SubscriberDetailScreen} />
+          <Stack.Screen name="TransactionDetail" component={TransactionDetailScreen} />
+        </>
       ) : (
         <Stack.Screen name="Auth" component={LoginScreen} />
       )}
