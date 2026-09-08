@@ -122,8 +122,8 @@ export const notificationService = {
     const payload: DeviceRegistrationPayload = {
       deviceToken,
       platform: Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'web',
-      tenantId: currentTenant?.id || 'tenant-main-nairobi',
-      userId: user?.id || 'usr-tech-001',
+      tenantId: currentTenant?.id || user?.tenantId || '',
+      userId: user?.id || '',
       appVersion: CONFIG.APP_VERSION,
       registeredAt: new Date().toISOString(),
     };

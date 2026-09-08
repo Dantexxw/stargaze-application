@@ -333,7 +333,7 @@ export const LoginScreen: React.FC = () => {
           name: regFullName,
           role: regRole,
           phone: regPhone || '+254 700 000 000',
-          tenantId: currentTenant?.id || 'tenant-main-nairobi',
+          tenantId: currentTenant?.id || '',
         },
         accessToken: (await user.getIdToken?.()) || `fb-tok-${Date.now()}`,
         refreshToken: user.refreshToken || `fb-ref-${Date.now()}`,

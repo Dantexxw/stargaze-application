@@ -4,7 +4,7 @@ export const CONFIG = {
   APP_NAME: 'STARGAZE ISP & Hotspot',
   APP_VERSION: '1.0.0',
   APP_ENV: process.env.EXPO_PUBLIC_APP_ENV || 'production',
-  DEFAULT_TENANT_ID: 'tenant-main-nairobi',
+  DEFAULT_TENANT_ID: '',
 };
 
 export const STORAGE_KEYS = {
