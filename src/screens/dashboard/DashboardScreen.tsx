@@ -10,7 +10,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../../components/common/Header';
 import { StatWidget } from '../../components/common/StatWidget';
-import { BandwidthGauge } from '../../components/dashboard/BandwidthGauge';
 import { RevenueSummary } from '../../components/dashboard/RevenueSummary';
 import { QuickActions } from '../../components/dashboard/QuickActions';
 import { Card } from '../../components/common/Card';
@@ -133,15 +132,6 @@ export const DashboardScreen: React.FC = () => {
             accentColor={metrics?.unresolvedAlerts ? COLORS.rose : COLORS.emerald}
           />
         </View>
-
-        {/* Real-time Bandwidth Gauge */}
-        <BandwidthGauge
-          downloadMbps={metrics?.downloadSpeedMbps ?? 0}
-          uploadMbps={metrics?.uploadSpeedMbps ?? 0}
-          peakMbps={metrics?.peakBandwidthMbps ?? 0}
-          totalTransferredGB={metrics?.totalDataTransferredGB ?? 0}
-          onSpeedtestPress={() => setSpeedtestVisible(true)}
-        />
 
         {/* RBAC Protected: Daily Revenue Summary (Admin & Billing Only) */}
         <RoleGuard

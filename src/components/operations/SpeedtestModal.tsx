@@ -22,6 +22,8 @@ interface SpeedtestModalProps {
   onAttachToTicket?: (result: any) => void;
 }
 
+type SpeedtestMode = 'router' | 'internet';
+
 export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({
   visible,
   onClose,
@@ -40,12 +42,14 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({
     startSpeedtest,
     reset,
   } = useSpeedtest();
+  const [mode, setMode] = React.useState<SpeedtestMode>('internet');
+  const testTarget = mode === 'router' ? targetDeviceName : 'Phone Internet Connection';
 
   const handleShare = async () => {
     if (!result) return;
     try {
       await Share.share({
-        message: `[STARGAZE SPEEDTEST VERIFICATION]\nTarget: ${targetDeviceName}\nDownload: ${result.downloadMbps} Mbps\nUpload: ${result.uploadMbps} Mbps\nPing: ${result.pingMs} ms (Jitter: ${result.jitterMs} ms)\nServer: ${result.serverLocation}\nStatus: ${result.rating}\nVerified at: ${new Date(result.timestamp).toLocaleTimeString()}`,
+        message: `[STARGAZE SPEEDTEST VERIFICATION]\nTarget: ${testTarget}\nDownload: ${result.downloadMbps} Mbps\nUpload: ${result.uploadMbps} Mbps\nPing: ${result.pingMs} ms (Jitter: ${result.jitterMs} ms)\nServer: ${result.serverLocation}\nStatus: ${result.rating}\nVerified at: ${new Date(result.timestamp).toLocaleTimeString()}`,
       });
     } catch {
       // Ignored
@@ -78,8 +82,8 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({
                 <Ionicons name="speedometer" size={20} color={COLORS.primaryLight} />
               </View>
               <View>
-                <Text style={styles.title}>Field Bandwidth Speedtest</Text>
-                <Text style={styles.targetSub} numberOfLines={1}>{targetDeviceName}</Text>
+                <Text style={styles.title}>Speed Test</Text>
+                <Text style={styles.targetSub} numberOfLines={1}>{testTarget}</Text>
               </View>
             </View>
             <TouchableOpacity
@@ -95,6 +99,29 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({
           </View>
 
           <ScrollView style={styles.scrollArea}>
+            {!isRunning && !result && (
+              <View style={styles.modeSection}>
+                <Text style={styles.modeTitle}>Choose test target</Text>
+                <View style={styles.modeRow}>
+                  <TouchableOpacity
+                    style={[styles.modeButton, mode === 'router' && styles.modeButtonActive]}
+                    onPress={() => setMode('router')}
+                  >
+                    <MaterialCommunityIcons name="router-wireless" size={20} color={mode === 'router' ? COLORS.primaryLight : COLORS.textSecondary} />
+                    <Text style={styles.modeButtonText}>MikroTik Router</Text>
+                    <Text style={styles.modeButtonSub}>{targetDeviceName}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.modeButton, mode === 'internet' && styles.modeButtonActive]}
+                    onPress={() => setMode('internet')}
+                  >
+                    <Ionicons name="globe-outline" size={20} color={mode === 'internet' ? COLORS.primaryLight : COLORS.textSecondary} />
+                    <Text style={styles.modeButtonText}>System Internet</Text>
+                    <Text style={styles.modeButtonSub}>This phone connection</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
             {/* Speedometer Gauge Display */}
             <View style={styles.gaugeContainer}>
               <View style={styles.gaugeCircle}>
@@ -300,6 +327,42 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: COLORS.textSecondary,
     marginTop: 4,
+  },
+  modeSection: {
+    marginBottom: SPACING.sm,
+  },
+  modeTitle: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: SPACING.xs,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modeButton: {
+    width: '48%',
+    backgroundColor: COLORS.surfaceLight,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: SPACING.sm,
+  },
+  modeButtonActive: {
+    borderColor: COLORS.primaryLight,
+    backgroundColor: 'rgba(99, 102, 241, 0.16)',
+  },
+  modeButtonText: {
+    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '800',
+    marginTop: 5,
+  },
+  modeButtonSub: {
+    color: COLORS.textSecondary,
+    fontSize: 10,
+    marginTop: 3,
   },
   metricsGrid: {
     flexDirection: 'row',
