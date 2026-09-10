@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   View,
   Text,
@@ -19,6 +19,7 @@ import { Tenant } from '../../types/models';
 import { tenantApi } from '../../api/tenantApi';
 import { useTenantStore } from '../../store/useTenantStore';
 import { useOperations } from '../../hooks/useOperations';
+import { useDashboardData } from '../../hooks/useDashboardData';
 import { operationsApi } from '../../api/operationsApi';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -32,7 +33,9 @@ export const PlatformDashboardScreen: React.FC = () => {
 
   const currentTenant = useTenantStore((state) => state.currentTenant);
   const setCurrentTenant = useTenantStore((state) => state.setCurrentTenant);
-  const { devices, isLoadingDevices, refetchDevices } = useOperations();
+  const queryClient = useQueryClient();
+  const { devices, isLoadingDevices } = useOperations();
+  const dashboardQuery = useDashboardData();
   const selectedRouter = devices.find((device) => device.id === selectedRouterId) || devices[0];
   const routerStatsQuery = useQuery({
     queryKey: ['fleetRouterStatistics', selectedRouter?.id],
@@ -70,8 +73,17 @@ export const PlatformDashboardScreen: React.FC = () => {
   const handleSelectTenant = async (t: Tenant) => {
     await setCurrentTenant(t);
     setAccountMenuOpen(false);
+    setRouterMenuOpen(false);
     setSelectedRouterId('');
-    await refetchDevices();
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: ['networkDevices', t.id], exact: true }),
+      queryClient.refetchQueries({ queryKey: ['dashboardMetrics', t.id], exact: true }),
+      queryClient.refetchQueries({ queryKey: ['networkAlerts', t.id], exact: true }),
+      queryClient.refetchQueries({ queryKey: ['accessPointsTopology', t.id], exact: true }),
+      queryClient.refetchQueries({ queryKey: ['financialAnalytics', t.id], exact: true }),
+      queryClient.refetchQueries({ queryKey: ['mpesaTransactions', t.id], exact: true }),
+      queryClient.refetchQueries({ queryKey: ['subscribers', t.id], exact: true }),
+    ]);
     Alert.alert('Tenant Switched', 'Active scope changed to ' + t.name + ' (' + t.code + ').');
   };
 
@@ -128,7 +140,7 @@ export const PlatformDashboardScreen: React.FC = () => {
           <TouchableOpacity style={styles.scopeDropdown} onPress={() => setAccountMenuOpen((open) => !open)}>
             <Ionicons name="business-outline" size={19} color={COLORS.primaryLight} />
             <Text style={styles.scopeDropdownText} numberOfLines={1}>
-              {currentTenant?.name || 'Select an ISP account'}
+              {currentTenant ? `${currentTenant.name} (${currentTenant.code})` : 'Select an ISP account'}
             </Text>
             <Ionicons name={accountMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textSecondary} />
           </TouchableOpacity>
@@ -140,8 +152,8 @@ export const PlatformDashboardScreen: React.FC = () => {
                   style={[styles.scopeMenuItem, currentTenant?.id === tenant.id && styles.scopeMenuItemActive]}
                   onPress={() => handleSelectTenant(tenant)}
                 >
-                  <Text style={styles.scopeMenuName}>{tenant.name}</Text>
-                  <Text style={styles.scopeMenuMeta}>{tenant.code} • {tenant.region}</Text>
+                  <Text style={styles.scopeMenuName}>{tenant.name} ({tenant.code})</Text>
+                  <Text style={styles.scopeMenuMeta}>{tenant.region}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -194,6 +206,42 @@ export const PlatformDashboardScreen: React.FC = () => {
               <View style={styles.routerStat}>
                 <Text style={styles.routerStatValue}>{selectedRouter.connectedClients}</Text>
                 <Text style={styles.routerStatLabel}>Clients</Text>
+              </View>
+            </View>
+          )}
+        </Card>
+
+        <Text style={styles.sectionTitle}>ACCOUNT STATISTICS</Text>
+        <Card style={styles.scopeCard}>
+          {dashboardQuery.isLoading ? (
+            <ActivityIndicator size="small" color={COLORS.primaryLight} />
+          ) : dashboardQuery.error ? (
+            <Text style={styles.scopeMenuMeta}>Account statistics are unavailable.</Text>
+          ) : (
+            <View style={styles.routerStatsGrid}>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{dashboardQuery.data?.activeSubscribers ?? 0}</Text>
+                <Text style={styles.routerStatLabel}>Subscribers</Text>
+              </View>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{dashboardQuery.data?.onlineGateways ?? 0}/{dashboardQuery.data?.totalGateways ?? 0}</Text>
+                <Text style={styles.routerStatLabel}>Online routers</Text>
+              </View>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{dashboardQuery.data?.activeHotspotUsers ?? 0}</Text>
+                <Text style={styles.routerStatLabel}>Hotspot users</Text>
+              </View>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>KES {Number(dashboardQuery.data?.todayRevenue ?? 0).toLocaleString()}</Text>
+                <Text style={styles.routerStatLabel}>Today's revenue</Text>
+              </View>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{dashboardQuery.data?.unresolvedAlerts ?? 0}</Text>
+                <Text style={styles.routerStatLabel}>Open alerts</Text>
+              </View>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{dashboardQuery.data?.downloadSpeedMbps ?? 0} Mbps</Text>
+                <Text style={styles.routerStatLabel}>Download</Text>
               </View>
             </View>
           )}
