@@ -442,24 +442,28 @@ export const SettingsProfileScreen: React.FC = () => {
           </View>
         </Card>
 
-        {/* System & API Configurations */}
-        <Text style={styles.sectionHeader}>SYSTEM CONFIGURATION</Text>
-        <Card style={styles.sectionCard}>
-          <View style={styles.configRow}>
-            <Text style={styles.configLabel}>API Endpoint</Text>
-            <Text style={styles.configValue}>{CONFIG.API_BASE_URL}</Text>
-          </View>
-          <View style={styles.configRow}>
-            <Text style={styles.configLabel}>App Version</Text>
-            <Text style={styles.configValue}>{CONFIG.APP_VERSION}</Text>
-          </View>
-          <View style={styles.configRow}>
-            <Text style={styles.configLabel}>x-tenant-id Header</Text>
-            <Text style={[styles.configValue, { color: COLORS.primaryLight }]}>
-              {currentTenant?.id}
-            </Text>
-          </View>
-        </Card>
+        {canManageTenants() && (
+          <>
+            {/* System & API Configurations */}
+            <Text style={styles.sectionHeader}>SYSTEM CONFIGURATION</Text>
+            <Card style={styles.sectionCard}>
+              <View style={styles.configRow}>
+                <Text style={styles.configLabel}>API Endpoint</Text>
+                <Text style={styles.configValue}>{CONFIG.API_BASE_URL}</Text>
+              </View>
+              <View style={styles.configRow}>
+                <Text style={styles.configLabel}>App Version</Text>
+                <Text style={styles.configValue}>{CONFIG.APP_VERSION}</Text>
+              </View>
+              <View style={styles.configRow}>
+                <Text style={styles.configLabel}>x-tenant-id Header</Text>
+                <Text style={[styles.configValue, { color: COLORS.primaryLight }]}>
+                  {currentTenant?.id}
+                </Text>
+              </View>
+            </Card>
+          </>
+        )}
 
         <Button
           title="Sign Out of Session"

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   View,
   Text,
@@ -27,6 +28,8 @@ import { COLORS, SPACING, RADIUS } from '../../constants/theme';
 import { useOperations } from '../../hooks/useOperations';
 import { useAccessPointsTopology } from '../../hooks/useAccessPointsTopology';
 import { useEmergencyAlerts } from '../../hooks/useEmergencyAlerts';
+import { useFinancialAnalytics } from '../../hooks/useFinancialAnalytics';
+import { operationsApi } from '../../api/operationsApi';
 import { useAuthStore } from '../../store/useAuthStore';
 import { EmergencyAlert } from '../../types/models';
 import { formatTimeAgo } from '../../utils/formatters';
@@ -40,6 +43,8 @@ export const OperationsScreen: React.FC = () => {
   const [hostFilter, setHostFilter] = useState<HostFilterMode>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedPortFilter, setSelectedPortFilter] = useState<string>('all');
+  const [selectedRouterId, setSelectedRouterId] = useState<string>('');
+  const [routerMenuOpen, setRouterMenuOpen] = useState(false);
 
   // Emergency & Dispatch Modal states
   const [dispatchModalVisible, setDispatchModalVisible] = useState(false);
@@ -85,6 +90,35 @@ export const OperationsScreen: React.FC = () => {
 
   const canRebootGateways = useAuthStore((state) => state.canRebootGateways);
   const canDispatchTechnicians = useAuthStore((state) => state.canDispatchTechnicians);
+  const { transactions } = useFinancialAnalytics();
+  const selectedRouter = devices.find((device) => device.id === selectedRouterId) || devices[0];
+  const routerStatsQuery = useQuery({
+    queryKey: ['routerStatistics', selectedRouter?.id],
+    queryFn: () => operationsApi.getRouterStatistics(selectedRouter!.id),
+    enabled: Boolean(selectedRouter?.id),
+    staleTime: 5000,
+    refetchInterval: 15000,
+  });
+
+  const selectedRouterMacs = new Set(
+    portsTopology.flatMap((port) =>
+      port.devices.map((client) => client.macAddress.toLowerCase())
+    )
+  );
+  const today = new Date();
+  const routerRevenue = transactions
+    .filter((transaction) => {
+      const date = new Date(transaction.timestamp);
+      return (
+        transaction.status === 'completed' &&
+        transaction.macAddress &&
+        selectedRouterMacs.has(transaction.macAddress.toLowerCase()) &&
+        date.getFullYear() === today.getFullYear() &&
+        date.getMonth() === today.getMonth() &&
+        date.getDate() === today.getDate()
+      );
+    })
+    .reduce((sum, transaction) => sum + transaction.amount, 0);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -305,6 +339,63 @@ export const OperationsScreen: React.FC = () => {
         {/* TAB 1: LIVE ACCESS POINTS & CONNECTED HOSTS */}
         {activeTab === 'live_ap_hosts' && (
           <View>
+            <Card style={styles.routerSelectorCard}>
+              <View style={styles.routerSelectorHeader}>
+                <View>
+                  <Text style={styles.sectionEyebrow}>ROUTER SCOPE</Text>
+                  <Text style={styles.routerSelectorTitle}>MikroTik router</Text>
+                </View>
+                <Badge label={selectedRouter?.status?.toUpperCase() || 'OFFLINE'} variant={selectedRouter?.status || 'offline'} size="sm" />
+              </View>
+              <TouchableOpacity
+                style={styles.routerDropdown}
+                onPress={() => setRouterMenuOpen((open) => !open)}
+              >
+                <MaterialCommunityIcons name="router-wireless" size={20} color={COLORS.primaryLight} />
+                <Text style={styles.routerDropdownText} numberOfLines={1}>
+                  {selectedRouter?.name || 'No router available'}
+                </Text>
+                <Ionicons name={routerMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textSecondary} />
+              </TouchableOpacity>
+              {routerMenuOpen && (
+                <View style={styles.routerMenu}>
+                  {devices.map((device) => (
+                    <TouchableOpacity
+                      key={device.id}
+                      style={[styles.routerMenuItem, selectedRouter?.id === device.id && styles.routerMenuItemActive]}
+                      onPress={() => {
+                        setSelectedRouterId(device.id);
+                        setRouterMenuOpen(false);
+                        setSelectedPortFilter('all');
+                      }}
+                    >
+                      <Text style={styles.routerMenuName}>{device.name}</Text>
+                      <Text style={styles.routerMenuMeta}>{device.model} • {device.ipAddress}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              )}
+              {selectedRouter && (
+                <View style={styles.routerStatsGrid}>
+                  <View style={styles.routerStat}>
+                    <Text style={styles.routerStatValue}>{routerStatsQuery.data?.cpu?.load ?? selectedRouter.cpuLoadPercent}%</Text>
+                    <Text style={styles.routerStatLabel}>CPU</Text>
+                  </View>
+                  <View style={styles.routerStat}>
+                    <Text style={styles.routerStatValue}>{routerStatsQuery.data?.memory?.usedPercent ?? selectedRouter.ramUsagePercent}%</Text>
+                    <Text style={styles.routerStatLabel}>RAM</Text>
+                  </View>
+                  <View style={styles.routerStat}>
+                    <Text style={styles.routerStatValue}>{selectedRouter.connectedClients}</Text>
+                    <Text style={styles.routerStatLabel}>Clients</Text>
+                  </View>
+                  <View style={styles.routerStat}>
+                    <Text style={styles.routerStatValue}>KES {routerRevenue.toLocaleString()}</Text>
+                    <Text style={styles.routerStatLabel}>Today</Text>
+                  </View>
+                </View>
+              )}
+            </Card>
             {/* Live Polling Status Banner */}
             <View style={styles.pollingBanner}>
               <View style={styles.pollingLeft}>
@@ -650,6 +741,96 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: '800',
     color: COLORS.textMuted,
+  },
+  routerSelectorCard: {
+    marginBottom: SPACING.sm,
+    borderColor: 'rgba(99, 102, 241, 0.4)',
+  },
+  routerSelectorHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: SPACING.sm,
+  },
+  sectionEyebrow: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  routerSelectorTitle: {
+    color: COLORS.text,
+    fontSize: 16,
+    fontWeight: '800',
+    marginTop: 2,
+  },
+  routerDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceLight,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  routerDropdownText: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '700',
+    marginHorizontal: SPACING.sm,
+  },
+  routerMenu: {
+    marginTop: SPACING.xs,
+    backgroundColor: COLORS.surfaceLight,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    overflow: 'hidden',
+  },
+  routerMenuItem: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  routerMenuItemActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+  },
+  routerMenuName: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  routerMenuMeta: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  routerStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.xs,
+    marginTop: SPACING.sm,
+  },
+  routerStat: {
+    width: '23%',
+    minWidth: 70,
+    backgroundColor: COLORS.surfaceLight,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm,
+    alignItems: 'center',
+  },
+  routerStatValue: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  routerStatLabel: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    marginTop: 3,
   },
   portFilterScroll: {
     marginBottom: SPACING.sm,

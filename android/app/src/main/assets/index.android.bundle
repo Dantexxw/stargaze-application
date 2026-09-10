@@ -75864,7 +75864,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     }
   });
   var _default = exports.default = TabNavigator;
-},818,[1,134,819,834,952,969,977,1117,1118,929,947,836,45,271]);
+},818,[1,134,819,834,952,971,977,1117,1118,929,947,836,45,271]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   "use strict";
 
@@ -108790,8 +108790,17 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     };
   }
   var operationsApi = exports.operationsApi = {
+    getRouterStatistics: function () {
+      var _ref = (0, _asyncToGenerator2.default)(function* (deviceId) {
+        var response = yield _ApiClient.apiClient.get(`/network/devices/${deviceId}/statistics`);
+        return response.data?.data ?? response.data;
+      });
+      return function getRouterStatistics(_x) {
+        return _ref.apply(this, arguments);
+      };
+    }(),
     getDashboardMetrics: function () {
-      var _ref = (0, _asyncToGenerator2.default)(function* () {
+      var _ref2 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var response = yield _ApiClient.apiClient.get('/dashboard/operations');
           var raw = response.data.data ?? response.data;
@@ -108821,11 +108830,11 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         }
       });
       return function getDashboardMetrics() {
-        return _ref.apply(this, arguments);
+        return _ref2.apply(this, arguments);
       };
     }(),
     getEmergencyAlerts: function () {
-      var _ref2 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref3 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var response = yield _ApiClient.apiClient.get('/network/access-points-topology');
           var raw = response.data?.data ?? response.data;
@@ -108836,48 +108845,48 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         }
       });
       return function getEmergencyAlerts() {
-        return _ref2.apply(this, arguments);
-      };
-    }(),
-    acknowledgeAlert: function () {
-      var _ref3 = (0, _asyncToGenerator2.default)(function* (alertId) {
-        var response = yield _ApiClient.apiClient.post(`/network/access-points-alerts/${alertId}/ack`);
-        return response.data;
-      });
-      return function acknowledgeAlert(_x) {
         return _ref3.apply(this, arguments);
       };
     }(),
-    getAvailableTechnicians: function () {
-      var _ref4 = (0, _asyncToGenerator2.default)(function* () {
-        return [];
+    acknowledgeAlert: function () {
+      var _ref4 = (0, _asyncToGenerator2.default)(function* (alertId) {
+        var response = yield _ApiClient.apiClient.post(`/network/access-points-alerts/${alertId}/ack`);
+        return response.data;
       });
-      return function getAvailableTechnicians() {
+      return function acknowledgeAlert(_x2) {
         return _ref4.apply(this, arguments);
       };
     }(),
-    dispatchTechnicianSms: function () {
-      var _ref5 = (0, _asyncToGenerator2.default)(function* (params) {
-        var response = yield _ApiClient.apiClient.post('/network/technicians/dispatch-sms', params);
-        return response.data;
+    getAvailableTechnicians: function () {
+      var _ref5 = (0, _asyncToGenerator2.default)(function* () {
+        return [];
       });
-      return function dispatchTechnicianSms(_x2) {
+      return function getAvailableTechnicians() {
         return _ref5.apply(this, arguments);
       };
     }(),
+    dispatchTechnicianSms: function () {
+      var _ref6 = (0, _asyncToGenerator2.default)(function* (params) {
+        var response = yield _ApiClient.apiClient.post('/network/technicians/dispatch-sms', params);
+        return response.data;
+      });
+      return function dispatchTechnicianSms(_x3) {
+        return _ref6.apply(this, arguments);
+      };
+    }(),
     pingDevicePort: function () {
-      var _ref6 = (0, _asyncToGenerator2.default)(function* (ipOrHost) {
+      var _ref7 = (0, _asyncToGenerator2.default)(function* (ipOrHost) {
         var response = yield _ApiClient.apiClient.post('/network/diagnostics/ping', {
           host: ipOrHost
         });
         return response.data.data;
       });
-      return function pingDevicePort(_x3) {
-        return _ref6.apply(this, arguments);
+      return function pingDevicePort(_x4) {
+        return _ref7.apply(this, arguments);
       };
     }(),
     getAccessPointsTopology: function () {
-      var _ref7 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref8 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var response = yield _ApiClient.apiClient.get('/network/access-points-topology');
           return normalizeTopology(response.data);
@@ -108887,11 +108896,11 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         }
       });
       return function getAccessPointsTopology() {
-        return _ref7.apply(this, arguments);
+        return _ref8.apply(this, arguments);
       };
     }(),
     getDevices: function () {
-      var _ref8 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref9 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var response = yield _ApiClient.apiClient.get('/network/devices');
           var body = response.data;
@@ -108903,11 +108912,11 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         }
       });
       return function getDevices() {
-        return _ref8.apply(this, arguments);
+        return _ref9.apply(this, arguments);
       };
     }(),
     getAlerts: function () {
-      var _ref9 = (0, _asyncToGenerator2.default)(function* () {
+      var _ref0 = (0, _asyncToGenerator2.default)(function* () {
         try {
           var response = yield _ApiClient.apiClient.get('/network/access-points-topology');
           var raw = response.data?.data ?? response.data;
@@ -108926,29 +108935,29 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
         }
       });
       return function getAlerts() {
-        return _ref9.apply(this, arguments);
-      };
-    }(),
-    rebootDevice: function () {
-      var _ref0 = (0, _asyncToGenerator2.default)(function* (deviceId) {
-        var response = yield _ApiClient.apiClient.post(`/network/devices/${deviceId}/reboot`);
-        return response.data;
-      });
-      return function rebootDevice(_x4) {
         return _ref0.apply(this, arguments);
       };
     }(),
-    disconnectHostDevice: function () {
-      var _ref1 = (0, _asyncToGenerator2.default)(function* (macAddress) {
-        var response = yield _ApiClient.apiClient.post(`/network/hosts/${macAddress}/disconnect`);
+    rebootDevice: function () {
+      var _ref1 = (0, _asyncToGenerator2.default)(function* (deviceId) {
+        var response = yield _ApiClient.apiClient.post(`/network/devices/${deviceId}/reboot`);
         return response.data;
       });
-      return function disconnectHostDevice(_x5) {
+      return function rebootDevice(_x5) {
         return _ref1.apply(this, arguments);
       };
     }(),
+    disconnectHostDevice: function () {
+      var _ref10 = (0, _asyncToGenerator2.default)(function* (macAddress) {
+        var response = yield _ApiClient.apiClient.post(`/network/hosts/${macAddress}/disconnect`);
+        return response.data;
+      });
+      return function disconnectHostDevice(_x6) {
+        return _ref10.apply(this, arguments);
+      };
+    }(),
     sendSmsBroadcast: function () {
-      var _ref10 = (0, _asyncToGenerator2.default)(function* (payload) {
+      var _ref11 = (0, _asyncToGenerator2.default)(function* (payload) {
         try {
           var response = yield _ApiClient.apiClient.post('/notifications/sms-broadcast', payload);
           return response.data;
@@ -108957,8 +108966,8 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
           throw error;
         }
       });
-      return function sendSmsBroadcast(_x6) {
-        return _ref10.apply(this, arguments);
+      return function sendSmsBroadcast(_x7) {
+        return _ref11.apply(this, arguments);
       };
     }()
   };
@@ -110957,28 +110966,31 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
   var _asyncToGenerator2 = _interopRequireDefault(require(_dependencyMap[1]));
   var _slicedToArray2 = _interopRequireDefault(require(_dependencyMap[2]));
   var _react = _interopRequireWildcard(require(_dependencyMap[3]));
-  var _reactNative = require(_dependencyMap[4]);
-  var _reactNativeSafeAreaContext = require(_dependencyMap[5]);
-  var _Header = require(_dependencyMap[6]);
-  var _CriticalAlertBanner = require(_dependencyMap[7]);
-  var _DispatchTechModal = require(_dependencyMap[8]);
-  var _PingDiagnosticModal = require(_dependencyMap[9]);
-  var _DispatchMapView = require(_dependencyMap[10]);
-  var _PortApCard = require(_dependencyMap[11]);
-  var _ConnectedDeviceCard = require(_dependencyMap[12]);
-  var _DeviceCard = require(_dependencyMap[13]);
-  var _TopologyMap = require(_dependencyMap[14]);
-  var _Card = require(_dependencyMap[15]);
-  var _Badge = require(_dependencyMap[16]);
-  var _Button = require(_dependencyMap[17]);
-  var _theme = require(_dependencyMap[18]);
-  var _useOperations2 = require(_dependencyMap[19]);
-  var _useAccessPointsTopology = require(_dependencyMap[20]);
-  var _useEmergencyAlerts2 = require(_dependencyMap[21]);
-  var _useAuthStore = require(_dependencyMap[22]);
-  var _formatters = require(_dependencyMap[23]);
-  var _vectorIcons = require(_dependencyMap[24]);
-  var _jsxRuntime = require(_dependencyMap[25]);
+  var _reactQuery = require(_dependencyMap[4]);
+  var _reactNative = require(_dependencyMap[5]);
+  var _reactNativeSafeAreaContext = require(_dependencyMap[6]);
+  var _Header = require(_dependencyMap[7]);
+  var _CriticalAlertBanner = require(_dependencyMap[8]);
+  var _DispatchTechModal = require(_dependencyMap[9]);
+  var _PingDiagnosticModal = require(_dependencyMap[10]);
+  var _DispatchMapView = require(_dependencyMap[11]);
+  var _PortApCard = require(_dependencyMap[12]);
+  var _ConnectedDeviceCard = require(_dependencyMap[13]);
+  var _DeviceCard = require(_dependencyMap[14]);
+  var _TopologyMap = require(_dependencyMap[15]);
+  var _Card = require(_dependencyMap[16]);
+  var _Badge = require(_dependencyMap[17]);
+  var _Button = require(_dependencyMap[18]);
+  var _theme = require(_dependencyMap[19]);
+  var _useOperations2 = require(_dependencyMap[20]);
+  var _useAccessPointsTopology = require(_dependencyMap[21]);
+  var _useEmergencyAlerts2 = require(_dependencyMap[22]);
+  var _useFinancialAnalytics = require(_dependencyMap[23]);
+  var _operationsApi = require(_dependencyMap[24]);
+  var _useAuthStore = require(_dependencyMap[25]);
+  var _formatters = require(_dependencyMap[26]);
+  var _vectorIcons = require(_dependencyMap[27]);
+  var _jsxRuntime = require(_dependencyMap[28]);
   function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
   var OperationsScreen = () => {
     var _useState = (0, _react.useState)('live_ap_hosts'),
@@ -110997,27 +111009,35 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       _useState8 = (0, _slicedToArray2.default)(_useState7, 2),
       selectedPortFilter = _useState8[0],
       setSelectedPortFilter = _useState8[1];
+    var _useState9 = (0, _react.useState)(''),
+      _useState0 = (0, _slicedToArray2.default)(_useState9, 2),
+      selectedRouterId = _useState0[0],
+      setSelectedRouterId = _useState0[1];
+    var _useState1 = (0, _react.useState)(false),
+      _useState10 = (0, _slicedToArray2.default)(_useState1, 2),
+      routerMenuOpen = _useState10[0],
+      setRouterMenuOpen = _useState10[1];
 
     // Emergency & Dispatch Modal states
-    var _useState9 = (0, _react.useState)(false),
-      _useState0 = (0, _slicedToArray2.default)(_useState9, 2),
-      dispatchModalVisible = _useState0[0],
-      setDispatchModalVisible = _useState0[1];
-    var _useState1 = (0, _react.useState)(null),
-      _useState10 = (0, _slicedToArray2.default)(_useState1, 2),
-      activeDispatchAlert = _useState10[0],
-      setActiveDispatchAlert = _useState10[1];
     var _useState11 = (0, _react.useState)(false),
       _useState12 = (0, _slicedToArray2.default)(_useState11, 2),
-      pingModalVisible = _useState12[0],
-      setPingModalVisible = _useState12[1];
-    var _useState13 = (0, _react.useState)({
+      dispatchModalVisible = _useState12[0],
+      setDispatchModalVisible = _useState12[1];
+    var _useState13 = (0, _react.useState)(null),
+      _useState14 = (0, _slicedToArray2.default)(_useState13, 2),
+      activeDispatchAlert = _useState14[0],
+      setActiveDispatchAlert = _useState14[1];
+    var _useState15 = (0, _react.useState)(false),
+      _useState16 = (0, _slicedToArray2.default)(_useState15, 2),
+      pingModalVisible = _useState16[0],
+      setPingModalVisible = _useState16[1];
+    var _useState17 = (0, _react.useState)({
         host: '',
         name: ''
       }),
-      _useState14 = (0, _slicedToArray2.default)(_useState13, 2),
-      pingTarget = _useState14[0],
-      setPingTarget = _useState14[1];
+      _useState18 = (0, _slicedToArray2.default)(_useState17, 2),
+      pingTarget = _useState18[0],
+      setPingTarget = _useState18[1];
     var _useOperations = (0, _useOperations2.useOperations)(),
       devices = _useOperations.devices,
       isLoadingDevices = _useOperations.isLoadingDevices,
@@ -111045,12 +111065,28 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       acknowledgeAlert = _useEmergencyAlerts.acknowledgeAlert,
       dispatchSms = _useEmergencyAlerts.dispatchSms,
       pingPort = _useEmergencyAlerts.pingPort;
-    var _useState15 = (0, _react.useState)(false),
-      _useState16 = (0, _slicedToArray2.default)(_useState15, 2),
-      refreshing = _useState16[0],
-      setRefreshing = _useState16[1];
+    var _useState19 = (0, _react.useState)(false),
+      _useState20 = (0, _slicedToArray2.default)(_useState19, 2),
+      refreshing = _useState20[0],
+      setRefreshing = _useState20[1];
     var canRebootGateways = (0, _useAuthStore.useAuthStore)(state => state.canRebootGateways);
     var canDispatchTechnicians = (0, _useAuthStore.useAuthStore)(state => state.canDispatchTechnicians);
+    var _useFinancialAnalytic = (0, _useFinancialAnalytics.useFinancialAnalytics)(),
+      transactions = _useFinancialAnalytic.transactions;
+    var selectedRouter = devices.find(device => device.id === selectedRouterId) || devices[0];
+    var routerStatsQuery = (0, _reactQuery.useQuery)({
+      queryKey: ['routerStatistics', selectedRouter?.id],
+      queryFn: () => _operationsApi.operationsApi.getRouterStatistics(selectedRouter.id),
+      enabled: Boolean(selectedRouter?.id),
+      staleTime: 5000,
+      refetchInterval: 15000
+    });
+    var selectedRouterMacs = new Set(portsTopology.flatMap(port => port.devices.map(client => client.macAddress.toLowerCase())));
+    var today = new Date();
+    var routerRevenue = transactions.filter(transaction => {
+      var date = new Date(transaction.timestamp);
+      return transaction.status === 'completed' && transaction.macAddress && selectedRouterMacs.has(transaction.macAddress.toLowerCase()) && date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+    }).reduce((sum, transaction) => sum + transaction.amount, 0);
     var onRefresh = /*#__PURE__*/function () {
       var _ref = (0, _asyncToGenerator2.default)(function* () {
         setRefreshing(true);
@@ -111226,7 +111262,97 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
           onPingPort: handleTriggerPing,
           onOpenMap: () => setActiveTab('dispatch_map')
         }, crit.id)), activeTab === 'live_ap_hosts' && /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-          children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_Card.Card, {
+            style: styles.routerSelectorCard,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.routerSelectorHeader,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.sectionEyebrow,
+                  children: "ROUTER SCOPE"
+                }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.routerSelectorTitle,
+                  children: "MikroTik router"
+                })]
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_Badge.Badge, {
+                label: selectedRouter?.status?.toUpperCase() || 'OFFLINE',
+                variant: selectedRouter?.status || 'offline',
+                size: "sm"
+              })]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+              style: styles.routerDropdown,
+              onPress: () => setRouterMenuOpen(open => !open),
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_vectorIcons.MaterialCommunityIcons, {
+                name: "router-wireless",
+                size: 20,
+                color: _theme.COLORS.primaryLight
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.routerDropdownText,
+                numberOfLines: 1,
+                children: selectedRouter?.name || 'No router available'
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_vectorIcons.Ionicons, {
+                name: routerMenuOpen ? 'chevron-up' : 'chevron-down',
+                size: 18,
+                color: _theme.COLORS.textSecondary
+              })]
+            }), routerMenuOpen && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+              style: styles.routerMenu,
+              children: devices.map(device => /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+                style: [styles.routerMenuItem, selectedRouter?.id === device.id && styles.routerMenuItemActive],
+                onPress: () => {
+                  setSelectedRouterId(device.id);
+                  setRouterMenuOpen(false);
+                  setSelectedPortFilter('all');
+                },
+                children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.routerMenuName,
+                  children: device.name
+                }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                  style: styles.routerMenuMeta,
+                  children: [device.model, " \u2022 ", device.ipAddress]
+                })]
+              }, device.id))
+            }), selectedRouter && /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.routerStatsGrid,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                style: styles.routerStat,
+                children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                  style: styles.routerStatValue,
+                  children: [routerStatsQuery.data?.cpu?.load ?? selectedRouter.cpuLoadPercent, "%"]
+                }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.routerStatLabel,
+                  children: "CPU"
+                })]
+              }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                style: styles.routerStat,
+                children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                  style: styles.routerStatValue,
+                  children: [routerStatsQuery.data?.memory?.usedPercent ?? selectedRouter.ramUsagePercent, "%"]
+                }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.routerStatLabel,
+                  children: "RAM"
+                })]
+              }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                style: styles.routerStat,
+                children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.routerStatValue,
+                  children: selectedRouter.connectedClients
+                }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.routerStatLabel,
+                  children: "Clients"
+                })]
+              }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+                style: styles.routerStat,
+                children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                  style: styles.routerStatValue,
+                  children: ["KES ", routerRevenue.toLocaleString()]
+                }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                  style: styles.routerStatLabel,
+                  children: "Today"
+                })]
+              })]
+            })]
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
             style: styles.pollingBanner,
             children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
               style: styles.pollingLeft,
@@ -111498,6 +111624,96 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       fontWeight: '800',
       color: _theme.COLORS.textMuted
     },
+    routerSelectorCard: {
+      marginBottom: _theme.SPACING.sm,
+      borderColor: 'rgba(99, 102, 241, 0.4)'
+    },
+    routerSelectorHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: _theme.SPACING.sm
+    },
+    sectionEyebrow: {
+      color: _theme.COLORS.textMuted,
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 1
+    },
+    routerSelectorTitle: {
+      color: _theme.COLORS.text,
+      fontSize: 16,
+      fontWeight: '800',
+      marginTop: 2
+    },
+    routerDropdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: _theme.COLORS.surfaceLight,
+      borderRadius: _theme.RADIUS.md,
+      borderWidth: 1,
+      borderColor: _theme.COLORS.border,
+      paddingHorizontal: _theme.SPACING.md,
+      paddingVertical: _theme.SPACING.sm
+    },
+    routerDropdownText: {
+      flex: 1,
+      color: _theme.COLORS.text,
+      fontSize: 14,
+      fontWeight: '700',
+      marginHorizontal: _theme.SPACING.sm
+    },
+    routerMenu: {
+      marginTop: _theme.SPACING.xs,
+      backgroundColor: _theme.COLORS.surfaceLight,
+      borderRadius: _theme.RADIUS.md,
+      borderWidth: 1,
+      borderColor: _theme.COLORS.border,
+      overflow: 'hidden'
+    },
+    routerMenuItem: {
+      paddingHorizontal: _theme.SPACING.md,
+      paddingVertical: _theme.SPACING.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: _theme.COLORS.border
+    },
+    routerMenuItemActive: {
+      backgroundColor: 'rgba(99, 102, 241, 0.18)'
+    },
+    routerMenuName: {
+      color: _theme.COLORS.text,
+      fontSize: 13,
+      fontWeight: '700'
+    },
+    routerMenuMeta: {
+      color: _theme.COLORS.textSecondary,
+      fontSize: 11,
+      marginTop: 2
+    },
+    routerStatsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: _theme.SPACING.xs,
+      marginTop: _theme.SPACING.sm
+    },
+    routerStat: {
+      width: '23%',
+      minWidth: 70,
+      backgroundColor: _theme.COLORS.surfaceLight,
+      borderRadius: _theme.RADIUS.md,
+      paddingVertical: _theme.SPACING.sm,
+      alignItems: 'center'
+    },
+    routerStatValue: {
+      color: _theme.COLORS.text,
+      fontSize: 13,
+      fontWeight: '800'
+    },
+    routerStatLabel: {
+      color: _theme.COLORS.textMuted,
+      fontSize: 10,
+      marginTop: 3
+    },
     portFilterScroll: {
       marginBottom: _theme.SPACING.sm
     },
@@ -111634,7 +111850,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       marginTop: _theme.SPACING.xs
     }
   });
-},952,[1,40,29,134,45,671,835,953,954,955,956,957,958,961,962,935,936,946,911,963,964,965,929,939,836,271]);
+},952,[1,40,29,134,680,45,671,835,953,954,955,956,957,958,961,962,935,936,946,911,963,964,965,969,944,929,939,836,271]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0]);
   Object.defineProperty(exports, "__esModule", {
@@ -114908,6 +115124,254 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
   }({});
 },968,[]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.useFinancialAnalytics = undefined;
+  var _reactQuery = require(_dependencyMap[0]);
+  var _paymentsApi = require(_dependencyMap[1]);
+  var _useTenantStore = require(_dependencyMap[2]);
+  var useFinancialAnalytics = () => {
+    var queryClient = (0, _reactQuery.useQueryClient)();
+    var currentTenant = (0, _useTenantStore.useTenantStore)(state => state.currentTenant);
+    var analyticsQuery = (0, _reactQuery.useQuery)({
+      queryKey: ['financialAnalytics', currentTenant?.id],
+      queryFn: () => _paymentsApi.paymentsApi.getFinancialAnalytics(),
+      refetchInterval: 10000,
+      staleTime: 5000
+    });
+    var mpesaStreamQuery = (0, _reactQuery.useQuery)({
+      queryKey: ['mpesaTransactionsStream', currentTenant?.id],
+      queryFn: () => _paymentsApi.paymentsApi.getMpesaTransactions(),
+      refetchInterval: 8000,
+      // Real-time M-Pesa transaction polling
+      staleTime: 4000
+    });
+    var grantVoucherMutation = (0, _reactQuery.useMutation)({
+      mutationFn: payload => _paymentsApi.paymentsApi.grantManualVoucher(payload),
+      onSuccess: () => {
+        queryClient.invalidateQueries({
+          queryKey: ['mpesaTransactionsStream', currentTenant?.id]
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['financialAnalytics', currentTenant?.id]
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['accessPointsTopology', currentTenant?.id]
+        });
+      }
+    });
+    return {
+      analytics: analyticsQuery.data,
+      isLoadingAnalytics: analyticsQuery.isLoading,
+      transactions: mpesaStreamQuery.data || [],
+      isLoadingTransactions: mpesaStreamQuery.isLoading,
+      isRefetchingTransactions: mpesaStreamQuery.isRefetching,
+      refetchTransactions: mpesaStreamQuery.refetch,
+      grantManualVoucher: grantVoucherMutation.mutateAsync,
+      isGrantingVoucher: grantVoucherMutation.isPending
+    };
+  };
+  exports.useFinancialAnalytics = useFinancialAnalytics;
+},969,[680,970,912]);
+__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
+  var _interopRequireDefault = require(_dependencyMap[0]);
+  Object.defineProperty(exports, "__esModule", {
+    value: true
+  });
+  exports.paymentsApi = undefined;
+  var _asyncToGenerator2 = _interopRequireDefault(require(_dependencyMap[1]));
+  var _ApiClient = require(_dependencyMap[2]);
+  function isToday(timestamp) {
+    if (!timestamp) return false;
+    var date = new Date(timestamp);
+    var now = new Date();
+    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
+  }
+  function getMpesaRevenueForDay(payments) {
+    var dayOffset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+    var target = new Date();
+    target.setDate(target.getDate() - dayOffset);
+    return payments.reduce((total, payment) => {
+      var method = String(payment.method || payment.paymentMethod || '').toUpperCase();
+      var status = String(payment.status || '').toUpperCase();
+      var timestamp = payment.paidAt || payment.createdAt;
+      var date = timestamp ? new Date(timestamp) : null;
+      var matchesDay = date && date.getFullYear() === target.getFullYear() && date.getMonth() === target.getMonth() && date.getDate() === target.getDate();
+      return matchesDay && status === 'COMPLETED' && (!method || method === 'MPESA') ? total + Number(payment.amount || 0) : total;
+    }, 0);
+  }
+  var paymentsApi = exports.paymentsApi = {
+    getHotspotPlans: function () {
+      var _ref = (0, _asyncToGenerator2.default)(function* () {
+        try {
+          var response = yield _ApiClient.apiClient.get('/payments/vouchers/plans');
+          return response.data.data || response.data || [];
+        } catch {
+          try {
+            var _response = yield _ApiClient.apiClient.get('/payments/hotspot-offers');
+            return _response.data.data || _response.data || [];
+          } catch (error) {
+            console.warn('[paymentsApi] Failed to fetch hotspot plans:', error);
+            throw error;
+          }
+        }
+      });
+      return function getHotspotPlans() {
+        return _ref.apply(this, arguments);
+      };
+    }(),
+    triggerStkPush: function () {
+      var _ref2 = (0, _asyncToGenerator2.default)(function* (payload) {
+        var response = yield _ApiClient.apiClient.post('/payments/stk-push', payload);
+        return response.data.data || response.data;
+      });
+      return function triggerStkPush(_x) {
+        return _ref2.apply(this, arguments);
+      };
+    }(),
+    getPayments: function () {
+      var _ref3 = (0, _asyncToGenerator2.default)(function* () {
+        var _take = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 50;
+        return paymentsApi.getMpesaTransactions();
+      });
+      return function getPayments() {
+        return _ref3.apply(this, arguments);
+      };
+    }(),
+    getFinancialAnalytics: function () {
+      var _ref4 = (0, _asyncToGenerator2.default)(function* () {
+        try {
+          // 1. Fetch payments with live analytics from VPS
+          var payRes = yield _ApiClient.apiClient.get('/payments?limit=100');
+          var payBody = payRes.data;
+          var payments = Array.isArray(payBody?.data) ? payBody.data : Array.isArray(payBody) ? payBody : [];
+
+          // 2. Fetch platform dashboard for operations metrics
+          var platformRes = null;
+          try {
+            var plat = yield _ApiClient.apiClient.get('/dashboard/platform');
+            platformRes = plat.data?.data ?? plat.data;
+          } catch {}
+          var totalRevenue = getMpesaRevenueForDay(payments);
+          var yesterdayRevenue = getMpesaRevenueForDay(payments, 1);
+          var completedTxns = payments.filter(payment => isToday(payment.paidAt || payment.createdAt) && String(payment.status || '').toUpperCase() === 'COMPLETED').length;
+          var customersCount = Number(platformRes?.operations?.customers) || 0;
+          var avgTicket = completedTxns > 0 ? totalRevenue / completedTxns : 0;
+          var todayTransactions = payments.filter(payment => isToday(payment.paidAt || payment.createdAt));
+          var completionRate = todayTransactions.length > 0 ? Math.round(completedTxns / todayTransactions.length * 1000) / 10 : 0;
+          return {
+            todayRevenue: totalRevenue,
+            yesterdayRevenue,
+            revenueGrowthPercent: yesterdayRevenue > 0 ? Math.round((totalRevenue - yesterdayRevenue) / yesterdayRevenue * 1000) / 10 : 0,
+            activeSubscribers: customersCount,
+            hotspotSalesCount: completedTxns,
+            conversionRatePercent: completionRate,
+            pppoeRevenue: 0,
+            hotspotRevenue: totalRevenue,
+            averageTransactionValue: Math.round(avgTicket * 100) / 100,
+            currency: 'KES'
+          };
+        } catch (err) {
+          console.warn('[paymentsApi] Live VPS analytics fallback:', err);
+          return {
+            todayRevenue: 0,
+            yesterdayRevenue: 0,
+            revenueGrowthPercent: 0,
+            activeSubscribers: 0,
+            hotspotSalesCount: 0,
+            conversionRatePercent: 0,
+            pppoeRevenue: 0,
+            hotspotRevenue: 0,
+            averageTransactionValue: 0,
+            currency: 'KES'
+          };
+        }
+      });
+      return function getFinancialAnalytics() {
+        return _ref4.apply(this, arguments);
+      };
+    }(),
+    getMpesaTransactions: function () {
+      var _ref5 = (0, _asyncToGenerator2.default)(function* () {
+        try {
+          var response = yield _ApiClient.apiClient.get('/payments?limit=100');
+          var rawList = response.data?.data ?? (Array.isArray(response.data) ? response.data : []);
+          return rawList.map(p => ({
+            id: p.id,
+            receiptNumber: p.mpesaReceipt || p.receiptNumber || p.mpesaReceiptNumber || p.transactionId || p.id?.slice(0, 10).toUpperCase() || 'TXN',
+            phoneNumber: p.phone || p.phoneNumber || p.customerPhone || p.customer?.phone || 'N/A',
+            customerName: p.customerName || (p.customer ? `${p.customer.firstName || ''} ${p.customer.lastName || ''}`.trim() : '') || 'Hotspot Customer',
+            amount: Number(p.amount) || 0,
+            currency: p.currency || 'KES',
+            type: p.paymentMethod === 'STK_PUSH' || p.method === 'STK_PUSH' ? 'STK_PUSH' : p.type || p.method || 'C2B',
+            packageName: p.notes || p.mpesaMetadata?.planCode || p.packageName || p.plan?.name || 'Hotspot Voucher Pass',
+            status: p.status?.toLowerCase() === 'completed' || p.status?.toLowerCase() === 'success' ? 'completed' : p.status?.toLowerCase() === 'failed' ? 'failed' : 'pending',
+            timestamp: p.paidAt || p.createdAt || p.timestamp || new Date().toISOString(),
+            accountReference: p.mpesaReceipt || p.accountReference || p.reference || 'STARGAZE',
+            macAddress: p.mpesaMetadata?.macAddress || p.macAddress,
+            durationPlan: p.durationPlan
+          }));
+        } catch (error) {
+          console.warn('[paymentsApi] Failed to fetch M-Pesa transactions:', error);
+          throw error;
+        }
+      });
+      return function getMpesaTransactions() {
+        return _ref5.apply(this, arguments);
+      };
+    }(),
+    getSubscribers: function () {
+      var _ref6 = (0, _asyncToGenerator2.default)(function* () {
+        try {
+          var response = yield _ApiClient.apiClient.get('/customers?limit=100');
+          var rawList = response.data?.data ?? (Array.isArray(response.data) ? response.data : []);
+          return rawList.map(c => ({
+            id: c.id,
+            name: `${c.firstName || ''} ${c.lastName || ''}`.trim() || c.name || 'Hotspot Customer',
+            accountNumber: c.phone || c.accountNumber || c.code || c.id?.slice(0, 8).toUpperCase() || 'SUB',
+            phone: c.phone || '',
+            type: c.serviceOffered?.toLowerCase().includes('hotspot') || c.connectionType?.toLowerCase().includes('hotspot') ? 'hotspot_voucher' : c.serviceType?.toLowerCase() === 'static_ip' ? 'static_ip' : 'pppoe',
+            planName: c.serviceOffered || c.plan?.name || c.planName || 'HotSpot · Standard Pass',
+            bandwidthProfile: c.speedLimit || '10M/10M',
+            ipAddress: c.ipAddress,
+            macAddress: c.macAddress,
+            status: c.status?.toLowerCase() === 'active' || c.accountStatus?.toLowerCase() === 'active' ? 'active' : c.status?.toLowerCase() === 'suspended' ? 'suspended' : 'expired',
+            expiryDate: c.expiryDate || c.subscriptionExpiresAt || c.createdAt || new Date().toISOString(),
+            dataUsedGB: c.dataUsedGB || 0,
+            dataLimitGB: c.dataLimitGB,
+            balance: c.balance || 0
+          }));
+        } catch (error) {
+          console.warn('[paymentsApi] Failed to fetch subscribers:', error);
+          throw error;
+        }
+      });
+      return function getSubscribers() {
+        return _ref6.apply(this, arguments);
+      };
+    }(),
+    grantManualVoucher: function () {
+      var _ref7 = (0, _asyncToGenerator2.default)(function* (payload) {
+        var response = yield _ApiClient.apiClient.post('/payments/vouchers', payload);
+        return response.data.data || response.data;
+      });
+      return function grantManualVoucher(_x2) {
+        return _ref7.apply(this, arguments);
+      };
+    }(),
+    generateVoucher: function () {
+      var _ref8 = (0, _asyncToGenerator2.default)(function* (params) {
+        var response = yield _ApiClient.apiClient.post('/vouchers/generate', params);
+        return response.data.data;
+      });
+      return function generateVoucher(_x3) {
+        return _ref8.apply(this, arguments);
+      };
+    }()
+  };
+},970,[1,40,923]);
+__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0]);
   Object.defineProperty(exports, "__esModule", {
     value: true
@@ -115641,7 +116105,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       flexDirection: 'row'
     }
   });
-},969,[1,40,29,134,45,671,835,970,971,972,973,935,936,946,942,911,975,976,929,545,836,271]);
+},971,[1,40,29,134,45,671,835,972,973,974,975,935,936,946,942,911,976,969,929,545,836,271]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0]);
   Object.defineProperty(exports, "__esModule", {
@@ -115863,7 +116327,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       height: '100%'
     }
   });
-},970,[1,134,45,935,937,911,939,836,271]);
+},972,[1,134,45,935,937,911,939,836,271]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0]);
   Object.defineProperty(exports, "__esModule", {
@@ -116101,7 +116565,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       marginLeft: 3
     }
   });
-},971,[1,134,45,935,936,911,939,836,271]);
+},973,[1,134,45,935,936,911,939,836,271]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0]);
   Object.defineProperty(exports, "__esModule", {
@@ -116426,7 +116890,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       color: _theme.COLORS.amberLight
     }
   });
-},972,[1,40,29,134,45,935,946,911,836,271]);
+},974,[1,40,29,134,45,935,946,911,836,271]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0]);
   Object.defineProperty(exports, "__esModule", {
@@ -117002,204 +117466,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     }
   });
   var _default = exports.default = StkPushTerminalModal;
-},973,[1,40,29,134,45,935,936,946,947,939,974,912,836,271]);
-__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  var _interopRequireDefault = require(_dependencyMap[0]);
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.paymentsApi = undefined;
-  var _asyncToGenerator2 = _interopRequireDefault(require(_dependencyMap[1]));
-  var _ApiClient = require(_dependencyMap[2]);
-  function isToday(timestamp) {
-    if (!timestamp) return false;
-    var date = new Date(timestamp);
-    var now = new Date();
-    return date.getFullYear() === now.getFullYear() && date.getMonth() === now.getMonth() && date.getDate() === now.getDate();
-  }
-  function getMpesaRevenueForDay(payments) {
-    var dayOffset = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-    var target = new Date();
-    target.setDate(target.getDate() - dayOffset);
-    return payments.reduce((total, payment) => {
-      var method = String(payment.method || payment.paymentMethod || '').toUpperCase();
-      var status = String(payment.status || '').toUpperCase();
-      var timestamp = payment.paidAt || payment.createdAt;
-      var date = timestamp ? new Date(timestamp) : null;
-      var matchesDay = date && date.getFullYear() === target.getFullYear() && date.getMonth() === target.getMonth() && date.getDate() === target.getDate();
-      return matchesDay && status === 'COMPLETED' && (!method || method === 'MPESA') ? total + Number(payment.amount || 0) : total;
-    }, 0);
-  }
-  var paymentsApi = exports.paymentsApi = {
-    getHotspotPlans: function () {
-      var _ref = (0, _asyncToGenerator2.default)(function* () {
-        try {
-          var response = yield _ApiClient.apiClient.get('/payments/vouchers/plans');
-          return response.data.data || response.data || [];
-        } catch {
-          try {
-            var _response = yield _ApiClient.apiClient.get('/payments/hotspot-offers');
-            return _response.data.data || _response.data || [];
-          } catch (error) {
-            console.warn('[paymentsApi] Failed to fetch hotspot plans:', error);
-            throw error;
-          }
-        }
-      });
-      return function getHotspotPlans() {
-        return _ref.apply(this, arguments);
-      };
-    }(),
-    triggerStkPush: function () {
-      var _ref2 = (0, _asyncToGenerator2.default)(function* (payload) {
-        var response = yield _ApiClient.apiClient.post('/payments/stk-push', payload);
-        return response.data.data || response.data;
-      });
-      return function triggerStkPush(_x) {
-        return _ref2.apply(this, arguments);
-      };
-    }(),
-    getPayments: function () {
-      var _ref3 = (0, _asyncToGenerator2.default)(function* () {
-        var _take = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 50;
-        return paymentsApi.getMpesaTransactions();
-      });
-      return function getPayments() {
-        return _ref3.apply(this, arguments);
-      };
-    }(),
-    getFinancialAnalytics: function () {
-      var _ref4 = (0, _asyncToGenerator2.default)(function* () {
-        try {
-          // 1. Fetch payments with live analytics from VPS
-          var payRes = yield _ApiClient.apiClient.get('/payments?limit=100');
-          var payBody = payRes.data;
-          var payments = Array.isArray(payBody?.data) ? payBody.data : Array.isArray(payBody) ? payBody : [];
-
-          // 2. Fetch platform dashboard for operations metrics
-          var platformRes = null;
-          try {
-            var plat = yield _ApiClient.apiClient.get('/dashboard/platform');
-            platformRes = plat.data?.data ?? plat.data;
-          } catch {}
-          var totalRevenue = getMpesaRevenueForDay(payments);
-          var yesterdayRevenue = getMpesaRevenueForDay(payments, 1);
-          var completedTxns = payments.filter(payment => isToday(payment.paidAt || payment.createdAt) && String(payment.status || '').toUpperCase() === 'COMPLETED').length;
-          var customersCount = Number(platformRes?.operations?.customers) || 0;
-          var avgTicket = completedTxns > 0 ? totalRevenue / completedTxns : 0;
-          var todayTransactions = payments.filter(payment => isToday(payment.paidAt || payment.createdAt));
-          var completionRate = todayTransactions.length > 0 ? Math.round(completedTxns / todayTransactions.length * 1000) / 10 : 0;
-          return {
-            todayRevenue: totalRevenue,
-            yesterdayRevenue,
-            revenueGrowthPercent: yesterdayRevenue > 0 ? Math.round((totalRevenue - yesterdayRevenue) / yesterdayRevenue * 1000) / 10 : 0,
-            activeSubscribers: customersCount,
-            hotspotSalesCount: completedTxns,
-            conversionRatePercent: completionRate,
-            pppoeRevenue: 0,
-            hotspotRevenue: totalRevenue,
-            averageTransactionValue: Math.round(avgTicket * 100) / 100,
-            currency: 'KES'
-          };
-        } catch (err) {
-          console.warn('[paymentsApi] Live VPS analytics fallback:', err);
-          return {
-            todayRevenue: 0,
-            yesterdayRevenue: 0,
-            revenueGrowthPercent: 0,
-            activeSubscribers: 0,
-            hotspotSalesCount: 0,
-            conversionRatePercent: 0,
-            pppoeRevenue: 0,
-            hotspotRevenue: 0,
-            averageTransactionValue: 0,
-            currency: 'KES'
-          };
-        }
-      });
-      return function getFinancialAnalytics() {
-        return _ref4.apply(this, arguments);
-      };
-    }(),
-    getMpesaTransactions: function () {
-      var _ref5 = (0, _asyncToGenerator2.default)(function* () {
-        try {
-          var response = yield _ApiClient.apiClient.get('/payments?limit=100');
-          var rawList = response.data?.data ?? (Array.isArray(response.data) ? response.data : []);
-          return rawList.map(p => ({
-            id: p.id,
-            receiptNumber: p.mpesaReceipt || p.receiptNumber || p.mpesaReceiptNumber || p.transactionId || p.id?.slice(0, 10).toUpperCase() || 'TXN',
-            phoneNumber: p.phone || p.phoneNumber || p.customerPhone || p.customer?.phone || 'N/A',
-            customerName: p.customerName || (p.customer ? `${p.customer.firstName || ''} ${p.customer.lastName || ''}`.trim() : '') || 'Hotspot Customer',
-            amount: Number(p.amount) || 0,
-            currency: p.currency || 'KES',
-            type: p.paymentMethod === 'STK_PUSH' || p.method === 'STK_PUSH' ? 'STK_PUSH' : p.type || p.method || 'C2B',
-            packageName: p.notes || p.mpesaMetadata?.planCode || p.packageName || p.plan?.name || 'Hotspot Voucher Pass',
-            status: p.status?.toLowerCase() === 'completed' || p.status?.toLowerCase() === 'success' ? 'completed' : p.status?.toLowerCase() === 'failed' ? 'failed' : 'pending',
-            timestamp: p.paidAt || p.createdAt || p.timestamp || new Date().toISOString(),
-            accountReference: p.mpesaReceipt || p.accountReference || p.reference || 'STARGAZE',
-            macAddress: p.mpesaMetadata?.macAddress || p.macAddress,
-            durationPlan: p.durationPlan
-          }));
-        } catch (error) {
-          console.warn('[paymentsApi] Failed to fetch M-Pesa transactions:', error);
-          throw error;
-        }
-      });
-      return function getMpesaTransactions() {
-        return _ref5.apply(this, arguments);
-      };
-    }(),
-    getSubscribers: function () {
-      var _ref6 = (0, _asyncToGenerator2.default)(function* () {
-        try {
-          var response = yield _ApiClient.apiClient.get('/customers?limit=100');
-          var rawList = response.data?.data ?? (Array.isArray(response.data) ? response.data : []);
-          return rawList.map(c => ({
-            id: c.id,
-            name: `${c.firstName || ''} ${c.lastName || ''}`.trim() || c.name || 'Hotspot Customer',
-            accountNumber: c.phone || c.accountNumber || c.code || c.id?.slice(0, 8).toUpperCase() || 'SUB',
-            phone: c.phone || '',
-            type: c.serviceOffered?.toLowerCase().includes('hotspot') || c.connectionType?.toLowerCase().includes('hotspot') ? 'hotspot_voucher' : c.serviceType?.toLowerCase() === 'static_ip' ? 'static_ip' : 'pppoe',
-            planName: c.serviceOffered || c.plan?.name || c.planName || 'HotSpot · Standard Pass',
-            bandwidthProfile: c.speedLimit || '10M/10M',
-            ipAddress: c.ipAddress,
-            macAddress: c.macAddress,
-            status: c.status?.toLowerCase() === 'active' || c.accountStatus?.toLowerCase() === 'active' ? 'active' : c.status?.toLowerCase() === 'suspended' ? 'suspended' : 'expired',
-            expiryDate: c.expiryDate || c.subscriptionExpiresAt || c.createdAt || new Date().toISOString(),
-            dataUsedGB: c.dataUsedGB || 0,
-            dataLimitGB: c.dataLimitGB,
-            balance: c.balance || 0
-          }));
-        } catch (error) {
-          console.warn('[paymentsApi] Failed to fetch subscribers:', error);
-          throw error;
-        }
-      });
-      return function getSubscribers() {
-        return _ref6.apply(this, arguments);
-      };
-    }(),
-    grantManualVoucher: function () {
-      var _ref7 = (0, _asyncToGenerator2.default)(function* (payload) {
-        var response = yield _ApiClient.apiClient.post('/payments/vouchers', payload);
-        return response.data.data || response.data;
-      });
-      return function grantManualVoucher(_x2) {
-        return _ref7.apply(this, arguments);
-      };
-    }(),
-    generateVoucher: function () {
-      var _ref8 = (0, _asyncToGenerator2.default)(function* (params) {
-        var response = yield _ApiClient.apiClient.post('/vouchers/generate', params);
-        return response.data.data;
-      });
-      return function generateVoucher(_x3) {
-        return _ref8.apply(this, arguments);
-      };
-    }()
-  };
-},974,[1,40,923]);
+},975,[1,40,29,134,45,935,936,946,947,939,970,912,836,271]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   Object.defineProperty(exports, "__esModule", {
     value: true
@@ -117240,58 +117507,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     };
   };
   exports.usePayments = usePayments;
-},975,[680,974,912]);
-__d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.useFinancialAnalytics = undefined;
-  var _reactQuery = require(_dependencyMap[0]);
-  var _paymentsApi = require(_dependencyMap[1]);
-  var _useTenantStore = require(_dependencyMap[2]);
-  var useFinancialAnalytics = () => {
-    var queryClient = (0, _reactQuery.useQueryClient)();
-    var currentTenant = (0, _useTenantStore.useTenantStore)(state => state.currentTenant);
-    var analyticsQuery = (0, _reactQuery.useQuery)({
-      queryKey: ['financialAnalytics', currentTenant?.id],
-      queryFn: () => _paymentsApi.paymentsApi.getFinancialAnalytics(),
-      refetchInterval: 10000,
-      staleTime: 5000
-    });
-    var mpesaStreamQuery = (0, _reactQuery.useQuery)({
-      queryKey: ['mpesaTransactionsStream', currentTenant?.id],
-      queryFn: () => _paymentsApi.paymentsApi.getMpesaTransactions(),
-      refetchInterval: 8000,
-      // Real-time M-Pesa transaction polling
-      staleTime: 4000
-    });
-    var grantVoucherMutation = (0, _reactQuery.useMutation)({
-      mutationFn: payload => _paymentsApi.paymentsApi.grantManualVoucher(payload),
-      onSuccess: () => {
-        queryClient.invalidateQueries({
-          queryKey: ['mpesaTransactionsStream', currentTenant?.id]
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['financialAnalytics', currentTenant?.id]
-        });
-        queryClient.invalidateQueries({
-          queryKey: ['accessPointsTopology', currentTenant?.id]
-        });
-      }
-    });
-    return {
-      analytics: analyticsQuery.data,
-      isLoadingAnalytics: analyticsQuery.isLoading,
-      transactions: mpesaStreamQuery.data || [],
-      isLoadingTransactions: mpesaStreamQuery.isLoading,
-      isRefetchingTransactions: mpesaStreamQuery.isRefetching,
-      refetchTransactions: mpesaStreamQuery.refetch,
-      grantManualVoucher: grantVoucherMutation.mutateAsync,
-      isGrantingVoucher: grantVoucherMutation.isPending
-    };
-  };
-  exports.useFinancialAnalytics = useFinancialAnalytics;
-},976,[680,974,912]);
+},976,[680,970,912]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0]);
   Object.defineProperty(exports, "__esModule", {
@@ -117835,39 +118051,41 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
               size: "sm"
             })]
           })]
-        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-          style: styles.sectionHeader,
-          children: "SYSTEM CONFIGURATION"
-        }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_Card.Card, {
-          style: styles.sectionCard,
-          children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.configRow,
-            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.configLabel,
-              children: "API Endpoint"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.configValue,
-              children: _config.CONFIG.API_BASE_URL
-            })]
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.configRow,
-            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.configLabel,
-              children: "App Version"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.configValue,
-              children: _config.CONFIG.APP_VERSION
-            })]
-          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
-            style: styles.configRow,
-            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: styles.configLabel,
-              children: "x-tenant-id Header"
-            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
-              style: [styles.configValue, {
-                color: _theme.COLORS.primaryLight
-              }],
-              children: currentTenant?.id
+        }), canManageTenants() && /*#__PURE__*/(0, _jsxRuntime.jsxs)(_jsxRuntime.Fragment, {
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+            style: styles.sectionHeader,
+            children: "SYSTEM CONFIGURATION"
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_Card.Card, {
+            style: styles.sectionCard,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.configRow,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.configLabel,
+                children: "API Endpoint"
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.configValue,
+                children: _config.CONFIG.API_BASE_URL
+              })]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.configRow,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.configLabel,
+                children: "App Version"
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.configValue,
+                children: _config.CONFIG.APP_VERSION
+              })]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.configRow,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.configLabel,
+                children: "x-tenant-id Header"
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: [styles.configValue, {
+                  color: _theme.COLORS.primaryLight
+                }],
+                children: currentTenant?.id
+              })]
             })]
           })]
         }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_Button.Button, {

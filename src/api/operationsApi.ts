@@ -177,6 +177,11 @@ function mapVpsDashboard(vps: any): DashboardMetrics {
 }
 
 export const operationsApi = {
+  getRouterStatistics: async (deviceId: string): Promise<any> => {
+    const response = await apiClient.get<any>(`/network/devices/${deviceId}/statistics`);
+    return response.data?.data ?? response.data;
+  },
+
   getDashboardMetrics: async (): Promise<DashboardMetrics> => {
     try {
       const response = await apiClient.get<any>('/dashboard/operations');
