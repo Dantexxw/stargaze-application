@@ -19,14 +19,21 @@ export const AppNavigator: React.FC = () => {
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const logout = useAuthStore((state) => state.logout);
   const loadPersistedTenant = useTenantStore((state) => state.loadPersistedTenant);
+  const loadTenants = useTenantStore((state) => state.loadTenants);
 
   useEffect(() => {
     setOnAuthExpired(() => {
       logout();
     });
-    initializeAuth();
-    loadPersistedTenant();
-  }, []);
+    const initialize = async () => {
+      await initializeAuth();
+      await loadPersistedTenant();
+      if (useAuthStore.getState().isAuthenticated) {
+        await loadTenants();
+      }
+    };
+    void initialize();
+  }, [initializeAuth, loadPersistedTenant, loadTenants, logout]);
 
   if (isLoading) {
     return (

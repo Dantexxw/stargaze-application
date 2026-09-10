@@ -18,15 +18,15 @@ function mapVpsDashboard(vps: any): DashboardMetrics {
 
   const activeSubscribers = isPlatform
     ? (vps.operations?.customers ?? 0)
-    : (vps.clients?.total ?? 0);
+    : (vps.clients?.pppoe ?? 0);
 
   const onlineGateways = isPlatform
     ? (vps.network?.onlineRouters ?? 0)
-    : (vps.usage?.liveSessions ?? 0);
+    : (vps.network?.onlineRouters ?? 0);
 
   const totalGateways = isPlatform
     ? (vps.network?.routers ?? 0)
-    : (vps.usage?.recentSessions ?? 0);
+    : (vps.network?.routers ?? 0);
 
   const todayRevenue = isPlatform
     ? (vps.finance?.monthPayments ?? 0)
@@ -93,23 +93,8 @@ export const operationsApi = {
         const response = await apiClient.get<any>('/dashboard/platform');
         const raw = response.data.data ?? response.data;
         return mapVpsDashboard(raw);
-      } catch {
-        return {
-          activeSubscribers: 0,
-          totalSubscribers: 0,
-          activeHotspotUsers: 0,
-          onlineGateways: 0,
-          totalGateways: 0,
-          todayRevenue: 0,
-          revenueTarget: 0,
-          currency: 'KES',
-          downloadSpeedMbps: 0,
-          uploadSpeedMbps: 0,
-          peakBandwidthMbps: 0,
-          totalDataTransferredGB: 0,
-          systemHealth: 'warning',
-          unresolvedAlerts: 0,
-        };
+      } catch (platformError) {
+        throw platformError;
       }
     }
   },
@@ -117,8 +102,11 @@ export const operationsApi = {
   getEmergencyAlerts: async (): Promise<EmergencyAlert[]> => {
     try {
       const response = await apiClient.get<ApiResponse<EmergencyAlert[]>>('/network/access-points-alerts');
-      return response.data.data;
-    } catch { return []; }
+      return response.data.data ?? [];
+    } catch (error) {
+      console.warn('[operationsApi] Failed to fetch emergency alerts:', error);
+      throw error;
+    }
   },
 
   acknowledgeAlert: async (alertId: string): Promise<{ success: boolean; message: string }> => {
@@ -129,8 +117,11 @@ export const operationsApi = {
   getAvailableTechnicians: async (): Promise<FieldTechnician[]> => {
     try {
       const response = await apiClient.get<ApiResponse<FieldTechnician[]>>('/network/technicians');
-      return response.data.data;
-    } catch { return []; }
+      return response.data.data ?? [];
+    } catch (error) {
+      console.warn('[operationsApi] Failed to fetch technicians:', error);
+      throw error;
+    }
   },
 
   dispatchTechnicianSms: async (params: {
@@ -151,22 +142,31 @@ export const operationsApi = {
   getAccessPointsTopology: async (): Promise<PortApTopology[]> => {
     try {
       const response = await apiClient.get<ApiResponse<PortApTopology[]>>('/network/access-points-topology');
-      return response.data.data;
-    } catch { return []; }
+      return response.data.data ?? [];
+    } catch (error) {
+      console.warn('[operationsApi] Failed to fetch topology:', error);
+      throw error;
+    }
   },
 
   getDevices: async (): Promise<NetworkDevice[]> => {
     try {
       const response = await apiClient.get<ApiResponse<NetworkDevice[]>>('/network/devices');
-      return response.data.data;
-    } catch { return []; }
+      return response.data.data ?? [];
+    } catch (error) {
+      console.warn('[operationsApi] Failed to fetch network devices:', error);
+      throw error;
+    }
   },
 
   getAlerts: async (): Promise<AlertItem[]> => {
     try {
       const response = await apiClient.get<ApiResponse<AlertItem[]>>('/network/alerts');
-      return response.data.data;
-    } catch { return []; }
+      return response.data.data ?? [];
+    } catch (error) {
+      console.warn('[operationsApi] Failed to fetch network alerts:', error);
+      throw error;
+    }
   },
 
   rebootDevice: async (deviceId: string): Promise<{ success: boolean; message: string }> => {
@@ -183,8 +183,9 @@ export const operationsApi = {
     try {
       const response = await apiClient.post<{ success: boolean; message: string }>('/notifications/sms-broadcast', payload);
       return response.data;
-    } catch {
-      return { success: true, message: 'Maintenance SMS broadcast queued to SMS gateway gateway queue.' };
+    } catch (error) {
+      console.warn('[operationsApi] SMS broadcast failed:', error);
+      throw error;
     }
   },
 };

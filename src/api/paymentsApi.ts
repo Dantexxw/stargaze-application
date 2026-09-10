@@ -19,7 +19,10 @@ export const paymentsApi = {
       try {
         const response = await apiClient.get<ApiResponse<HotspotPlan[]>>('/payments/hotspot-offers');
         return response.data.data || (response.data as any) || [];
-      } catch { return []; }
+      } catch (error) {
+        console.warn('[paymentsApi] Failed to fetch hotspot plans:', error);
+        throw error;
+      }
     }
   },
 
@@ -42,7 +45,7 @@ export const paymentsApi = {
       let platformRes: any = null;
       try {
         const plat = await apiClient.get<any>('/dashboard/platform');
-        platformRes = plat.data;
+        platformRes = plat.data?.data ?? plat.data;
       } catch {}
 
       const totalRevenue =
@@ -136,8 +139,9 @@ export const paymentsApi = {
         macAddress: p.mpesaMetadata?.macAddress || p.macAddress,
         durationPlan: p.durationPlan,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      console.warn('[paymentsApi] Failed to fetch M-Pesa transactions:', error);
+      throw error;
     }
   },
 
@@ -175,8 +179,9 @@ export const paymentsApi = {
         dataLimitGB: c.dataLimitGB,
         balance: c.balance || 0,
       }));
-    } catch {
-      return [];
+    } catch (error) {
+      console.warn('[paymentsApi] Failed to fetch subscribers:', error);
+      throw error;
     }
   },
 
