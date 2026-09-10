@@ -81,6 +81,32 @@ function normalizeTopology(body: any): PortApTopology[] {
   }));
 }
 
+function normalizeTopologyAlerts(body: any): any[] {
+  return Array.isArray(body?.alerts) ? body.alerts : [];
+}
+
+function mapEmergencyAlert(alert: any): EmergencyAlert {
+  return {
+    id: alert.id,
+    title: alert.type === 'PHYSICAL_DISCONNECT_OR_THEFT' ? 'Physical link alert' : 'Access point alert',
+    description: alert.message || 'Access point connectivity issue detected.',
+    portName: alert.portName || 'Unknown port',
+    apName: alert.apName || 'Unknown access point',
+    apModel: alert.apModel || 'Unknown model',
+    macAddress: alert.apMac || '—',
+    ipAddress: alert.ipAddress || '—',
+    location: alert.location || 'Network site',
+    latitude: Number(alert.latitude || 0),
+    longitude: Number(alert.longitude || 0),
+    disconnectTime: alert.detectedAt || alert.lastSeen || new Date().toISOString(),
+    severity: String(alert.severity || '').toLowerCase() === 'warning' ? 'warning' : 'critical',
+    acknowledged: alert.status === 'ACKNOWLEDGED' || alert.status === 'RESOLVED',
+    acknowledgedBy: alert.acknowledgedBy,
+    acknowledgedAt: alert.acknowledgedAt || alert.resolvedAt,
+    dispatchStatus: alert.status === 'RESOLVED' ? 'resolved' : alert.smsDispatched ? 'dispatched' : 'idle',
+  };
+}
+
 function mapVpsDashboard(vps: any): DashboardMetrics {
   // Platform dashboard shape: { tenants, network, operations, finance }
   // Operations dashboard shape: { clients, plans, usage, payments, support }
@@ -187,13 +213,9 @@ export const operationsApi = {
 
   getEmergencyAlerts: async (): Promise<EmergencyAlert[]> => {
     try {
-      const response = await apiClient.get<ApiResponse<EmergencyAlert[]>>('/network/access-points-alerts');
-      const body = response.data as ApiResponse<EmergencyAlert[]> | EmergencyAlert[];
-      return Array.isArray(body)
-        ? body
-        : Array.isArray((body as any).alerts)
-        ? (body as any).alerts
-        : body.data ?? [];
+      const response = await apiClient.get<any>('/network/access-points-topology');
+      const raw = response.data?.data ?? response.data;
+      return normalizeTopologyAlerts(raw).map(mapEmergencyAlert);
     } catch (error) {
       console.warn('[operationsApi] Failed to fetch emergency alerts:', error);
       throw error;
@@ -206,14 +228,7 @@ export const operationsApi = {
   },
 
   getAvailableTechnicians: async (): Promise<FieldTechnician[]> => {
-    try {
-      const response = await apiClient.get<ApiResponse<FieldTechnician[]>>('/network/technicians');
-      const body = response.data as ApiResponse<FieldTechnician[]> | FieldTechnician[];
-      return Array.isArray(body) ? body : body.data ?? [];
-    } catch (error) {
-      console.warn('[operationsApi] Failed to fetch technicians:', error);
-      throw error;
-    }
+    return [];
   },
 
   dispatchTechnicianSms: async (params: {
@@ -255,9 +270,17 @@ export const operationsApi = {
 
   getAlerts: async (): Promise<AlertItem[]> => {
     try {
-      const response = await apiClient.get<ApiResponse<AlertItem[]>>('/network/alerts');
-      const body = response.data as ApiResponse<AlertItem[]> | AlertItem[];
-      return Array.isArray(body) ? body : body.data ?? [];
+      const response = await apiClient.get<any>('/network/access-points-topology');
+      const raw = response.data?.data ?? response.data;
+      return normalizeTopologyAlerts(raw).map((alert: any) => ({
+        id: alert.id,
+        title: alert.type || 'Access point alert',
+        description: alert.message || 'Access point connectivity issue detected.',
+        severity: String(alert.severity || '').toLowerCase() === 'warning' ? 'warning' : 'critical',
+        timestamp: alert.detectedAt || alert.lastSeen || new Date().toISOString(),
+        acknowledged: alert.status === 'ACKNOWLEDGED' || alert.status === 'RESOLVED',
+        deviceName: alert.apName,
+      }));
     } catch (error) {
       console.warn('[operationsApi] Failed to fetch network alerts:', error);
       throw error;
