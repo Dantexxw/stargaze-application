@@ -34,6 +34,7 @@
         <category android:name="android.intent.category.DEFAULT"/>
         <category android:name="android.intent.category.BROWSABLE"/>
         <data android:scheme="com.stargaze.isp"/>
+        <data android:scheme="com.vukalindk.stargaze"/>
       </intent-filter>
     </activity>
   </application>

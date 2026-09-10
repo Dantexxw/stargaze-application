@@ -57,6 +57,17 @@ function parseLoginResponse(response: any): LoginResponse {
 }
 
 export const authApi = {
+  socialLogin: async (
+    provider: 'google' | 'apple' | 'microsoft',
+    token: string
+  ): Promise<LoginResponse> => {
+    const response = await apiClient.post<any>('/auth/social-login', {
+      provider,
+      token,
+    });
+    return parseLoginResponse(response);
+  },
+
   platformLogin: async (credentials: PlatformLoginRequest): Promise<LoginResponse> => {
     try {
       const response = await apiClient.post<any>(

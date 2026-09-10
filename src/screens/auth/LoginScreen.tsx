@@ -22,6 +22,7 @@ import { checkBiometricSupport, promptBiometricAuth } from '../../utils/biometri
 import { UserRole } from '../../types/models';
 import {
   firebaseSignIn,
+  firebaseSignInWithGoogleCredential,
   firebaseRegisterUser,
   firebaseSendPasswordReset,
   getFirebaseErrorMessage,
@@ -79,6 +80,140 @@ const QUICK_OPERATOR_ACCOUNTS = [
   },
 ];
 
+export interface DetectedRoleInfo {
+  role: UserRole;
+  label: string;
+  badgeColor: string;
+  icon: string;
+  scopeDesc: string;
+}
+
+export function detectAccountRole(emailStr: string): DetectedRoleInfo {
+  const clean = (emailStr || '').trim().toLowerCase();
+
+  // 1. Exact matches for verified operator accounts
+  if (
+    clean === 'danielkgitahi@gmail.com' ||
+    clean === 'superadmin@stargaze.net' ||
+    clean.includes('vukalindk')
+  ) {
+    return {
+      role: 'SUPER_ADMIN',
+      label: 'Platform Super Admin',
+      badgeColor: '#F43F5E',
+      icon: 'shield-checkmark',
+      scopeDesc: 'Platform Scope • Global Routers, Fleet & All Branches',
+    };
+  }
+  if (clean === 'hnohh30@gmail.com' || clean === 'admin@stargaze.net') {
+    return {
+      role: 'TENANT_ADMIN',
+      label: 'Tenant Admin',
+      badgeColor: '#6366F1',
+      icon: 'business',
+      scopeDesc: 'Branch Manager • Stargaze ISP Subscriptions & Revenue',
+    };
+  }
+  if (clean === 'technician@stargaze.net' || clean === 'ghostdantexxd@gmail.com') {
+    return {
+      role: 'TECHNICIAN',
+      label: 'NOC Technician',
+      badgeColor: '#10B981',
+      icon: 'construct',
+      scopeDesc: 'Field Engineering • Routers, Hotspots & Dispatches',
+    };
+  }
+  if (clean === 'billing@stargaze.net') {
+    return {
+      role: 'BILLING_ADMIN',
+      label: 'Billing Admin',
+      badgeColor: '#F59E0B',
+      icon: 'wallet',
+      scopeDesc: 'Finance & Payments • M-Pesa Accounting & Invoices',
+    };
+  }
+  if (clean === 'support@stargaze.net') {
+    return {
+      role: 'SUPPORT_AGENT',
+      label: 'Support Agent',
+      badgeColor: '#38BDF8',
+      icon: 'headset',
+      scopeDesc: 'Customer Support • CRM Tickets & Helpdesk',
+    };
+  }
+
+  // 2. Domain & email keyword heuristics
+  if (
+    clean.includes('superadmin') ||
+    clean.includes('director') ||
+    clean.includes('owner') ||
+    clean.includes('platform') ||
+    clean.includes('executive')
+  ) {
+    return {
+      role: 'SUPER_ADMIN',
+      label: 'Super Admin',
+      badgeColor: '#F43F5E',
+      icon: 'shield-checkmark',
+      scopeDesc: 'Platform Scope • Global Network Fleet',
+    };
+  }
+  if (
+    clean.includes('admin') ||
+    clean.includes('manager') ||
+    clean.includes('branch') ||
+    clean.includes('tenant')
+  ) {
+    return {
+      role: 'TENANT_ADMIN',
+      label: 'Tenant Admin',
+      badgeColor: '#6366F1',
+      icon: 'business',
+      scopeDesc: 'Branch Level • Operations & Subscribers',
+    };
+  }
+  if (
+    clean.includes('billing') ||
+    clean.includes('finance') ||
+    clean.includes('accountant') ||
+    clean.includes('ledger') ||
+    clean.includes('payment')
+  ) {
+    return {
+      role: 'BILLING_ADMIN',
+      label: 'Billing Admin',
+      badgeColor: '#F59E0B',
+      icon: 'wallet',
+      scopeDesc: 'Financial Accounts • Ledger & Payments',
+    };
+  }
+  if (
+    clean.includes('support') ||
+    clean.includes('help') ||
+    clean.includes('desk') ||
+    clean.includes('agent') ||
+    clean.includes('ticket') ||
+    clean.includes('crm')
+  ) {
+    return {
+      role: 'SUPPORT_AGENT',
+      label: 'Support Agent',
+      badgeColor: '#38BDF8',
+      icon: 'headset',
+      scopeDesc: 'Customer Support • Helpdesk Tickets',
+    };
+  }
+
+  // Default for all field engineers / technicians
+  return {
+    role: 'TECHNICIAN',
+    label: 'Field Engineer',
+    badgeColor: '#10B981',
+    icon: 'construct',
+    scopeDesc: 'Technical Operations • Field Diagnostic Access',
+  };
+}
+
 export const LoginScreen: React.FC = () => {
   // Navigation mode
   const [authMode, setAuthMode] = useState<AuthMode>('LOGIN');
@@ -87,6 +222,10 @@ export const LoginScreen: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showQuickFill, setShowQuickFill] = useState(false);
+
+  // Automatic role resolution from active input
+  const detectedRole = detectAccountRole(email);
 
   // Register form state
   const [regFullName, setRegFullName] = useState('');
@@ -162,47 +301,46 @@ export const LoginScreen: React.FC = () => {
       const userData = response?.data?.user ?? response?.user ?? response;
       const idToken = response?.data?.idToken ?? response?.idToken;
       const userEmail = (userData?.email || '').toLowerCase();
-
-      // Determine role from email pattern or known operator registry
-      let userRole: UserRole = 'TECHNICIAN';
-      if (
-        userEmail.includes('superadmin') ||
-        userEmail.includes('director') ||
-        userEmail.includes('owner')
-      ) {
-        userRole = 'SUPER_ADMIN';
-      } else if (
-        userEmail.includes('admin') ||
-        userEmail.includes('manager') ||
-        userEmail.includes('branch')
-      ) {
-        userRole = 'TENANT_ADMIN';
+      if (!idToken || !userEmail) {
+        throw new Error('Google sign-in did not return a usable identity token.');
       }
 
-      const knownRoles: Record<string, UserRole> = {
-        'danielkgitahi@gmail.com': 'SUPER_ADMIN',
-        'superadmin@stargaze.net': 'SUPER_ADMIN',
-        'admin@stargaze.net': 'TENANT_ADMIN',
-        'technician@stargaze.net': 'TECHNICIAN',
-        'ghostdantexxd@gmail.com': 'TECHNICIAN',
-      };
-      if (knownRoles[userEmail]) userRole = knownRoles[userEmail];
+      // Convert the native Google token into a Firebase token, then exchange it
+      // for the VPS access and refresh tokens used by protected API requests.
+      const firebaseUser = await firebaseSignInWithGoogleCredential(idToken);
+      const firebaseIdToken = await firebaseUser.getIdToken(true);
+      const vpsRes = await authApi.socialLogin('google', firebaseIdToken);
+
+      // Automatically detect and assign role based on authenticated account
+      const detected = detectAccountRole(userEmail);
+      const userRole: UserRole = vpsRes.user?.role || detected.role;
 
       await setAuth({
         user: {
-          id: userData?.id || `google-${Date.now()}`,
-          email: userData?.email || userEmail,
-          name: userData?.name || userData?.email?.split('@')[0] || 'Google User',
+          id: vpsRes.user?.id || firebaseUser.uid,
+          email: vpsRes.user?.email || firebaseUser.email || userEmail,
+          name:
+            vpsRes.user?.name ||
+            firebaseUser.displayName ||
+            userData?.name ||
+            userEmail.split('@')[0],
           role: userRole,
-          avatarUrl: userData?.photo || undefined,
-          phone: '',
-          tenantId: currentTenant?.id || '4bf37180-9e84-488e-9a03-fd2502933e94',
+          avatarUrl: userData?.photo || firebaseUser.photoURL || undefined,
+          phone: vpsRes.user?.phone || '',
+          tenantId:
+            vpsRes.user?.tenantId ||
+            currentTenant?.id ||
+            '4bf37180-9e84-488e-9a03-fd2502933e94',
         },
-        accessToken: idToken || `google-tok-${Date.now()}`,
-        refreshToken: '',
+        accessToken: vpsRes.accessToken,
+        refreshToken: vpsRes.refreshToken,
       });
 
-      setSuccessMessage(`Signed In As ${userData?.name || userEmail}`);
+      setSuccessMessage(
+        `Signed In As ${vpsRes.user?.name || firebaseUser.displayName || userEmail} • ${
+          detected.label
+        }`
+      );
     } catch (err: any) {
       if (err.code === statusCodes.SIGN_IN_CANCELLED) {
         // User cancelled picker
@@ -237,7 +375,7 @@ export const LoginScreen: React.FC = () => {
 
       // 1. Authenticate against Live VPS Backend (hotspotwispman production system)
       try {
-        const vpsRes = await authApi.login({ email: cleanEmail, password });
+        const vpsRes = await authApi.platformLogin({ email: cleanEmail, password });
         if (vpsRes?.accessToken && vpsRes?.user) {
           await setAuth({
             user: vpsRes.user,
@@ -246,7 +384,8 @@ export const LoginScreen: React.FC = () => {
           });
           // Load real tenants from VPS after login
           loadTenants().catch(() => {});
-          setSuccessMessage(`Signed In As ${vpsRes.user.name || vpsRes.user.email}`);
+          const detected = detectAccountRole(cleanEmail);
+          setSuccessMessage(`Signed In As ${vpsRes.user.name || vpsRes.user.email} • ${detected.label}`);
           loggedIn = true;
         }
       } catch (vpsErr: any) {
@@ -256,26 +395,10 @@ export const LoginScreen: React.FC = () => {
       // 2. Fallback to Firebase / Authorized Operator Registry
       if (!loggedIn) {
         const fbUser = await firebaseSignIn(cleanEmail, password);
-
-        let userRole: UserRole = fbUser.role || 'TECHNICIAN';
-        let displayName = fbUser.displayName || cleanEmail.split('@')[0];
-        let userPhone = fbUser.phoneNumber || '+254 700 000 000';
-
-        if (!fbUser.role) {
-          if (cleanEmail.includes('danielkgitahi') || cleanEmail.includes('super') || cleanEmail.includes('director') || cleanEmail.includes('owner')) {
-            userRole = 'SUPER_ADMIN';
-            displayName = fbUser.displayName || 'Daniel Gitahi';
-            userPhone = '+254 702 039 959';
-          } else if (cleanEmail.includes('admin') || cleanEmail.includes('manager') || cleanEmail.includes('branch')) {
-            userRole = 'TENANT_ADMIN';
-            displayName = fbUser.displayName || 'Nairobi Branch Admin';
-            userPhone = '+254 711 000 002';
-          } else if (cleanEmail.includes('tech') || cleanEmail.includes('field') || cleanEmail.includes('engineer') || cleanEmail.includes('ghost')) {
-            userRole = 'TECHNICIAN';
-            displayName = fbUser.displayName || 'Field Network Engineer';
-            userPhone = '+254 711 000 003';
-          }
-        }
+        const detected = detectAccountRole(cleanEmail);
+        const userRole: UserRole = fbUser.role || detected.role;
+        const displayName = fbUser.displayName || cleanEmail.split('@')[0];
+        const userPhone = fbUser.phoneNumber || '+254 700 000 000';
 
         const idToken = (await fbUser.getIdToken?.()) || `fb-tok-${Date.now()}`;
         await setAuth({
@@ -290,6 +413,7 @@ export const LoginScreen: React.FC = () => {
           accessToken: idToken,
           refreshToken: fbUser.refreshToken,
         });
+        setSuccessMessage(`Signed In As ${displayName} • ${detected.label}`);
       }
 
       // Prompt for biometric setup if hardware supported and not already enabled
@@ -573,49 +697,50 @@ export const LoginScreen: React.FC = () => {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* Quick Select Role Accounts */}
-              <View style={styles.quickAccountsContainer}>
-                <Text style={styles.quickAccountsHeader}>QUICK SELECT OPERATOR ROLE:</Text>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.quickAccountsScroll}
+              {/* Automatic Role Assignment Indicator */}
+              <View
+                style={[
+                  styles.autoRoleBanner,
+                  email.trim().length > 0 && {
+                    borderColor: `${detectedRole.badgeColor}60`,
+                    backgroundColor: `${detectedRole.badgeColor}12`,
+                  },
+                ]}
+              >
+                <View
+                  style={[
+                    styles.autoRoleIconBox,
+                    {
+                      backgroundColor:
+                        email.trim().length > 0
+                          ? `${detectedRole.badgeColor}25`
+                          : 'rgba(99, 102, 241, 0.15)',
+                    },
+                  ]}
                 >
-                  {QUICK_OPERATOR_ACCOUNTS.map((acc) => {
-                    const isSelected = email.toLowerCase() === acc.email.toLowerCase();
-                    return (
-                      <TouchableOpacity
-                        key={acc.email}
-                        activeOpacity={0.75}
-                        onPress={() => {
-                          setEmail(acc.email);
-                          setPassword(acc.password);
-                          setErrorMessage(null);
-                        }}
-                        style={[
-                          styles.quickAccountCard,
-                          isSelected && {
-                            borderColor: acc.badgeColor,
-                            backgroundColor: `${acc.badgeColor}20`,
-                          },
-                        ]}
-                      >
-                        <View style={styles.quickAccountTop}>
-                          <Ionicons name={acc.icon as any} size={14} color={acc.badgeColor} />
-                          <Text
-                            style={[
-                              styles.quickAccountRole,
-                              { color: isSelected ? acc.badgeColor : COLORS.text },
-                            ]}
-                          >
-                            {acc.label}
-                          </Text>
-                        </View>
-                        <Text style={styles.quickAccountDesc}>{acc.desc}</Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </ScrollView>
+                  <Ionicons
+                    name={email.trim().length > 0 ? (detectedRole.icon as any) : 'shield-checkmark'}
+                    size={16}
+                    color={email.trim().length > 0 ? detectedRole.badgeColor : COLORS.primaryLight}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <View style={styles.autoRoleHeaderRow}>
+                    <Text style={styles.autoRoleTitle}>
+                      {email.trim().length > 0 ? 'AUTOMATIC ROLE DETECTED:' : 'AUTOMATIC ROLE ASSIGNMENT'}
+                    </Text>
+                    {email.trim().length > 0 && (
+                      <View style={[styles.autoRoleTag, { backgroundColor: detectedRole.badgeColor }]}>
+                        <Text style={styles.autoRoleTagText}>{detectedRole.label.toUpperCase()}</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.autoRoleDesc} numberOfLines={1}>
+                    {email.trim().length > 0
+                      ? detectedRole.scopeDesc
+                      : 'Role & permissions are determined automatically from your verified account.'}
+                  </Text>
+                </View>
               </View>
 
               <View style={styles.inputGroup}>
@@ -706,6 +831,72 @@ export const LoginScreen: React.FC = () => {
                     </View>
                     <Ionicons name="chevron-forward" size={18} color={COLORS.textSecondary} />
                   </TouchableOpacity>
+                )}
+
+                {/* Collapsible Quick-Fill for Demo / Testing */}
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => setShowQuickFill(!showQuickFill)}
+                  style={styles.quickFillToggle}
+                >
+                  <Ionicons
+                    name={showQuickFill ? 'chevron-up-circle-outline' : 'flash-outline'}
+                    size={14}
+                    color={COLORS.textSecondary}
+                  />
+                  <Text style={styles.quickFillToggleText}>
+                    {showQuickFill
+                      ? 'Hide Quick-Fill Test Accounts'
+                      : 'Need to test a role? Quick-fill test credentials'}
+                  </Text>
+                </TouchableOpacity>
+
+                {showQuickFill && (
+                  <View style={styles.quickAccountsContainer}>
+                    <Text style={styles.quickAccountsHeader}>
+                      TAP AN ACCOUNT TO QUICK-FILL (ROLE APPLIES AUTOMATICALLY):
+                    </Text>
+                    <ScrollView
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                      contentContainerStyle={styles.quickAccountsScroll}
+                    >
+                      {QUICK_OPERATOR_ACCOUNTS.map((acc) => {
+                        const isSelected = email.toLowerCase() === acc.email.toLowerCase();
+                        return (
+                          <TouchableOpacity
+                            key={acc.email}
+                            activeOpacity={0.75}
+                            onPress={() => {
+                              setEmail(acc.email);
+                              setPassword(acc.password);
+                              setErrorMessage(null);
+                            }}
+                            style={[
+                              styles.quickAccountCard,
+                              isSelected && {
+                                borderColor: acc.badgeColor,
+                                backgroundColor: `${acc.badgeColor}20`,
+                              },
+                            ]}
+                          >
+                            <View style={styles.quickAccountTop}>
+                              <Ionicons name={acc.icon as any} size={14} color={acc.badgeColor} />
+                              <Text
+                                style={[
+                                  styles.quickAccountRole,
+                                  { color: isSelected ? acc.badgeColor : COLORS.text },
+                                ]}
+                              >
+                                {acc.label}
+                              </Text>
+                            </View>
+                            <Text style={styles.quickAccountDesc}>{acc.desc}</Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </ScrollView>
+                  </View>
                 )}
 
                 <View style={styles.cardFooter}>
@@ -1548,6 +1739,66 @@ const styles = StyleSheet.create({
   quickAccountDesc: {
     fontSize: 10,
     color: COLORS.textMuted,
+  },
+  autoRoleBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(99, 102, 241, 0.08)',
+    borderColor: 'rgba(99, 102, 241, 0.25)',
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    padding: SPACING.md,
+    marginBottom: SPACING.md,
+    gap: 10,
+  },
+  autoRoleIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  autoRoleHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    flexWrap: 'wrap',
+    marginBottom: 2,
+  },
+  autoRoleTitle: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: COLORS.textMuted,
+    letterSpacing: 0.6,
+  },
+  autoRoleTag: {
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  autoRoleTagText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    letterSpacing: 0.4,
+  },
+  autoRoleDesc: {
+    fontSize: 11,
+    color: COLORS.textSecondary,
+    lineHeight: 15,
+  },
+  quickFillToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: SPACING.sm,
+    marginTop: SPACING.sm,
+  },
+  quickFillToggleText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: COLORS.textSecondary,
   },
 });
 

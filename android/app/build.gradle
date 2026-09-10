@@ -88,7 +88,7 @@ android {
 
     namespace 'com.stargaze.isp'
     defaultConfig {
-        applicationId 'com.stargaze.isp'
+        applicationId 'com.vukalindk.stargaze'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
@@ -178,3 +178,6 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+apply plugin: "com.google.gms.google-services"
+

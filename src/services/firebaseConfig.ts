@@ -1,13 +1,14 @@
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
   getAuth,
+  GoogleAuthProvider,
+  signInWithCredential,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   sendPasswordResetEmail,
   signOut,
   updateProfile,
   onAuthStateChanged,
-  GoogleAuthProvider,
   User,
   Auth,
 } from 'firebase/auth';
@@ -46,6 +47,12 @@ googleProvider.setCustomParameters({
 });
 
 export { auth, app, googleProvider };
+
+export async function firebaseSignInWithGoogleCredential(idToken: string) {
+  const credential = GoogleAuthProvider.credential(idToken);
+  const userCredential = await signInWithCredential(auth, credential);
+  return userCredential.user;
+}
 
 // In-memory registered user store (retains registered operators during app lifecycle)
 interface RegisteredOperator {
