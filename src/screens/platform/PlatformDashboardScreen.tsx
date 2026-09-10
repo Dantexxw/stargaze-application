@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import {
   View,
   Text,
@@ -17,15 +18,33 @@ import { COLORS, SPACING, RADIUS } from '../../constants/theme';
 import { Tenant } from '../../types/models';
 import { tenantApi } from '../../api/tenantApi';
 import { useTenantStore } from '../../store/useTenantStore';
+import { useOperations } from '../../hooks/useOperations';
+import { operationsApi } from '../../api/operationsApi';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 
 export const PlatformDashboardScreen: React.FC = () => {
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [accountMenuOpen, setAccountMenuOpen] = useState(false);
+  const [routerMenuOpen, setRouterMenuOpen] = useState(false);
+  const [selectedRouterId, setSelectedRouterId] = useState('');
 
   const currentTenant = useTenantStore((state) => state.currentTenant);
   const setCurrentTenant = useTenantStore((state) => state.setCurrentTenant);
+  const { devices, isLoadingDevices, refetchDevices } = useOperations();
+  const selectedRouter = devices.find((device) => device.id === selectedRouterId) || devices[0];
+  const routerStatsQuery = useQuery({
+    queryKey: ['fleetRouterStatistics', selectedRouter?.id],
+    queryFn: () => operationsApi.getRouterStatistics(selectedRouter!.id),
+    enabled: Boolean(selectedRouter?.id),
+    refetchInterval: 15000,
+    staleTime: 5000,
+  });
+
+  useEffect(() => {
+    setSelectedRouterId(devices[0]?.id || '');
+  }, [currentTenant?.id, devices]);
 
   const fetchTenants = async () => {
     try {
@@ -50,6 +69,9 @@ export const PlatformDashboardScreen: React.FC = () => {
 
   const handleSelectTenant = async (t: Tenant) => {
     await setCurrentTenant(t);
+    setAccountMenuOpen(false);
+    setSelectedRouterId('');
+    await refetchDevices();
     Alert.alert('Tenant Switched', 'Active scope changed to ' + t.name + ' (' + t.code + ').');
   };
 
@@ -99,6 +121,83 @@ export const PlatformDashboardScreen: React.FC = () => {
             <Text style={styles.kpiLabel}>Core Routers</Text>
           </Card>
         </View>
+
+        <Text style={styles.sectionTitle}>ADMIN SCOPE</Text>
+        <Card style={styles.scopeCard}>
+          <Text style={styles.scopeLabel}>ACCOUNT / ISP TENANT</Text>
+          <TouchableOpacity style={styles.scopeDropdown} onPress={() => setAccountMenuOpen((open) => !open)}>
+            <Ionicons name="business-outline" size={19} color={COLORS.primaryLight} />
+            <Text style={styles.scopeDropdownText} numberOfLines={1}>
+              {currentTenant?.name || 'Select an ISP account'}
+            </Text>
+            <Ionicons name={accountMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+          {accountMenuOpen && (
+            <View style={styles.scopeMenu}>
+              {tenants.map((tenant) => (
+                <TouchableOpacity
+                  key={tenant.id}
+                  style={[styles.scopeMenuItem, currentTenant?.id === tenant.id && styles.scopeMenuItemActive]}
+                  onPress={() => handleSelectTenant(tenant)}
+                >
+                  <Text style={styles.scopeMenuName}>{tenant.name}</Text>
+                  <Text style={styles.scopeMenuMeta}>{tenant.code} • {tenant.region}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          <Text style={[styles.scopeLabel, { marginTop: SPACING.md }]}>ROUTER</Text>
+          <TouchableOpacity
+            style={styles.scopeDropdown}
+            onPress={() => setRouterMenuOpen((open) => !open)}
+            disabled={isLoadingDevices || devices.length === 0}
+          >
+            <MaterialCommunityIcons name="router-wireless" size={20} color={COLORS.amber} />
+            <Text style={styles.scopeDropdownText} numberOfLines={1}>
+              {isLoadingDevices ? 'Loading routers...' : selectedRouter?.name || 'No router available'}
+            </Text>
+            <Ionicons name={routerMenuOpen ? 'chevron-up' : 'chevron-down'} size={18} color={COLORS.textSecondary} />
+          </TouchableOpacity>
+          {routerMenuOpen && (
+            <View style={styles.scopeMenu}>
+              {devices.map((device) => (
+                <TouchableOpacity
+                  key={device.id}
+                  style={[styles.scopeMenuItem, selectedRouter?.id === device.id && styles.scopeMenuItemActive]}
+                  onPress={() => {
+                    setSelectedRouterId(device.id);
+                    setRouterMenuOpen(false);
+                  }}
+                >
+                  <Text style={styles.scopeMenuName}>{device.name}</Text>
+                  <Text style={styles.scopeMenuMeta}>{device.model} • {device.ipAddress}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {selectedRouter && (
+            <View style={styles.routerStatsGrid}>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{selectedRouter.status.toUpperCase()}</Text>
+                <Text style={styles.routerStatLabel}>Status</Text>
+              </View>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{routerStatsQuery.data?.cpu?.load ?? selectedRouter.cpuLoadPercent}%</Text>
+                <Text style={styles.routerStatLabel}>CPU</Text>
+              </View>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{routerStatsQuery.data?.memory?.usedPercent ?? selectedRouter.ramUsagePercent}%</Text>
+                <Text style={styles.routerStatLabel}>RAM</Text>
+              </View>
+              <View style={styles.routerStat}>
+                <Text style={styles.routerStatValue}>{selectedRouter.connectedClients}</Text>
+                <Text style={styles.routerStatLabel}>Clients</Text>
+              </View>
+            </View>
+          )}
+        </Card>
 
         <Text style={styles.sectionTitle}>REGISTERED ISP TENANTS ({tenants.length})</Text>
 
@@ -211,6 +310,85 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     color: COLORS.textMuted,
     marginBottom: SPACING.xs,
+  },
+  scopeCard: {
+    marginBottom: SPACING.md,
+    borderColor: 'rgba(99, 102, 241, 0.4)',
+  },
+  scopeLabel: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1,
+    marginBottom: SPACING.xs,
+  },
+  scopeDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceLight,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+  },
+  scopeDropdownText: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '700',
+    marginHorizontal: SPACING.sm,
+  },
+  scopeMenu: {
+    marginTop: SPACING.xs,
+    backgroundColor: COLORS.surfaceLight,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderRadius: RADIUS.md,
+    overflow: 'hidden',
+  },
+  scopeMenuItem: {
+    paddingHorizontal: SPACING.md,
+    paddingVertical: SPACING.sm,
+    borderBottomColor: COLORS.border,
+    borderBottomWidth: 1,
+  },
+  scopeMenuItemActive: {
+    backgroundColor: 'rgba(99, 102, 241, 0.18)',
+  },
+  scopeMenuName: {
+    color: COLORS.text,
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  scopeMenuMeta: {
+    color: COLORS.textSecondary,
+    fontSize: 11,
+    marginTop: 2,
+  },
+  routerStatsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.xs,
+    marginTop: SPACING.sm,
+  },
+  routerStat: {
+    width: '23%',
+    minWidth: 70,
+    alignItems: 'center',
+    backgroundColor: COLORS.surfaceLight,
+    borderRadius: RADIUS.md,
+    paddingVertical: SPACING.sm,
+  },
+  routerStatValue: {
+    color: COLORS.text,
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  routerStatLabel: {
+    color: COLORS.textMuted,
+    fontSize: 10,
+    marginTop: 3,
   },
   tenantCard: {
     padding: SPACING.md,

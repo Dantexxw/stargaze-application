@@ -127072,16 +127072,19 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
   var _asyncToGenerator2 = _interopRequireDefault(require(_dependencyMap[1]));
   var _slicedToArray2 = _interopRequireDefault(require(_dependencyMap[2]));
   var _react = _interopRequireWildcard(require(_dependencyMap[3]));
-  var _reactNative = require(_dependencyMap[4]);
-  var _reactNativeSafeAreaContext = require(_dependencyMap[5]);
-  var _Header = require(_dependencyMap[6]);
-  var _Card = require(_dependencyMap[7]);
-  var _Badge = require(_dependencyMap[8]);
-  var _theme = require(_dependencyMap[9]);
-  var _tenantApi = require(_dependencyMap[10]);
-  var _useTenantStore = require(_dependencyMap[11]);
-  var _vectorIcons = require(_dependencyMap[12]);
-  var _jsxRuntime = require(_dependencyMap[13]);
+  var _reactQuery = require(_dependencyMap[4]);
+  var _reactNative = require(_dependencyMap[5]);
+  var _reactNativeSafeAreaContext = require(_dependencyMap[6]);
+  var _Header = require(_dependencyMap[7]);
+  var _Card = require(_dependencyMap[8]);
+  var _Badge = require(_dependencyMap[9]);
+  var _theme = require(_dependencyMap[10]);
+  var _tenantApi = require(_dependencyMap[11]);
+  var _useTenantStore = require(_dependencyMap[12]);
+  var _useOperations2 = require(_dependencyMap[13]);
+  var _operationsApi = require(_dependencyMap[14]);
+  var _vectorIcons = require(_dependencyMap[15]);
+  var _jsxRuntime = require(_dependencyMap[16]);
   function _interopRequireWildcard(e, t) { if ("function" == typeof WeakMap) var r = new WeakMap(), n = new WeakMap(); return (_interopRequireWildcard = function (e, t) { if (!t && e && e.__esModule) return e; var o, i, f = { __proto__: null, default: e }; if (null === e || "object" != typeof e && "function" != typeof e) return f; if (o = t ? n : r) { if (o.has(e)) return o.get(e); o.set(e, f); } for (var _t in e) "default" !== _t && {}.hasOwnProperty.call(e, _t) && ((i = (o = Object.defineProperty) && Object.getOwnPropertyDescriptor(e, _t)) && (i.get || i.set) ? o(f, _t, i) : f[_t] = e[_t]); return f; })(e, t); }
   var PlatformDashboardScreen = () => {
     var _useState = (0, _react.useState)([]),
@@ -127096,8 +127099,35 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       _useState6 = (0, _slicedToArray2.default)(_useState5, 2),
       refreshing = _useState6[0],
       setRefreshing = _useState6[1];
+    var _useState7 = (0, _react.useState)(false),
+      _useState8 = (0, _slicedToArray2.default)(_useState7, 2),
+      accountMenuOpen = _useState8[0],
+      setAccountMenuOpen = _useState8[1];
+    var _useState9 = (0, _react.useState)(false),
+      _useState0 = (0, _slicedToArray2.default)(_useState9, 2),
+      routerMenuOpen = _useState0[0],
+      setRouterMenuOpen = _useState0[1];
+    var _useState1 = (0, _react.useState)(''),
+      _useState10 = (0, _slicedToArray2.default)(_useState1, 2),
+      selectedRouterId = _useState10[0],
+      setSelectedRouterId = _useState10[1];
     var currentTenant = (0, _useTenantStore.useTenantStore)(state => state.currentTenant);
     var setCurrentTenant = (0, _useTenantStore.useTenantStore)(state => state.setCurrentTenant);
+    var _useOperations = (0, _useOperations2.useOperations)(),
+      devices = _useOperations.devices,
+      isLoadingDevices = _useOperations.isLoadingDevices,
+      refetchDevices = _useOperations.refetchDevices;
+    var selectedRouter = devices.find(device => device.id === selectedRouterId) || devices[0];
+    var routerStatsQuery = (0, _reactQuery.useQuery)({
+      queryKey: ['fleetRouterStatistics', selectedRouter?.id],
+      queryFn: () => _operationsApi.operationsApi.getRouterStatistics(selectedRouter.id),
+      enabled: Boolean(selectedRouter?.id),
+      refetchInterval: 15000,
+      staleTime: 5000
+    });
+    (0, _react.useEffect)(() => {
+      setSelectedRouterId(devices[0]?.id || '');
+    }, [currentTenant?.id, devices]);
     var fetchTenants = /*#__PURE__*/function () {
       var _ref = (0, _asyncToGenerator2.default)(function* () {
         try {
@@ -127124,6 +127154,9 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     var handleSelectTenant = /*#__PURE__*/function () {
       var _ref2 = (0, _asyncToGenerator2.default)(function* (t) {
         yield setCurrentTenant(t);
+        setAccountMenuOpen(false);
+        setSelectedRouterId('');
+        yield refetchDevices();
         _reactNative.Alert.alert('Tenant Switched', 'Active scope changed to ' + t.name + ' (' + t.code + ').');
       });
       return function handleSelectTenant(_x) {
@@ -127198,6 +127231,121 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
             }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
               style: styles.kpiLabel,
               children: "Core Routers"
+            })]
+          })]
+        }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+          style: styles.sectionTitle,
+          children: "ADMIN SCOPE"
+        }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_Card.Card, {
+          style: styles.scopeCard,
+          children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+            style: styles.scopeLabel,
+            children: "ACCOUNT / ISP TENANT"
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+            style: styles.scopeDropdown,
+            onPress: () => setAccountMenuOpen(open => !open),
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_vectorIcons.Ionicons, {
+              name: "business-outline",
+              size: 19,
+              color: _theme.COLORS.primaryLight
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.scopeDropdownText,
+              numberOfLines: 1,
+              children: currentTenant?.name || 'Select an ISP account'
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_vectorIcons.Ionicons, {
+              name: accountMenuOpen ? 'chevron-up' : 'chevron-down',
+              size: 18,
+              color: _theme.COLORS.textSecondary
+            })]
+          }), accountMenuOpen && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+            style: styles.scopeMenu,
+            children: tenants.map(tenant => /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+              style: [styles.scopeMenuItem, currentTenant?.id === tenant.id && styles.scopeMenuItemActive],
+              onPress: () => handleSelectTenant(tenant),
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.scopeMenuName,
+                children: tenant.name
+              }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                style: styles.scopeMenuMeta,
+                children: [tenant.code, " \u2022 ", tenant.region]
+              })]
+            }, tenant.id))
+          }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+            style: [styles.scopeLabel, {
+              marginTop: _theme.SPACING.md
+            }],
+            children: "ROUTER"
+          }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+            style: styles.scopeDropdown,
+            onPress: () => setRouterMenuOpen(open => !open),
+            disabled: isLoadingDevices || devices.length === 0,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_vectorIcons.MaterialCommunityIcons, {
+              name: "router-wireless",
+              size: 20,
+              color: _theme.COLORS.amber
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+              style: styles.scopeDropdownText,
+              numberOfLines: 1,
+              children: isLoadingDevices ? 'Loading routers...' : selectedRouter?.name || 'No router available'
+            }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_vectorIcons.Ionicons, {
+              name: routerMenuOpen ? 'chevron-up' : 'chevron-down',
+              size: 18,
+              color: _theme.COLORS.textSecondary
+            })]
+          }), routerMenuOpen && /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.View, {
+            style: styles.scopeMenu,
+            children: devices.map(device => /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.TouchableOpacity, {
+              style: [styles.scopeMenuItem, selectedRouter?.id === device.id && styles.scopeMenuItemActive],
+              onPress: () => {
+                setSelectedRouterId(device.id);
+                setRouterMenuOpen(false);
+              },
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.scopeMenuName,
+                children: device.name
+              }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                style: styles.scopeMenuMeta,
+                children: [device.model, " \u2022 ", device.ipAddress]
+              })]
+            }, device.id))
+          }), selectedRouter && /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+            style: styles.routerStatsGrid,
+            children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.routerStat,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.routerStatValue,
+                children: selectedRouter.status.toUpperCase()
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.routerStatLabel,
+                children: "Status"
+              })]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.routerStat,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                style: styles.routerStatValue,
+                children: [routerStatsQuery.data?.cpu?.load ?? selectedRouter.cpuLoadPercent, "%"]
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.routerStatLabel,
+                children: "CPU"
+              })]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.routerStat,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
+                style: styles.routerStatValue,
+                children: [routerStatsQuery.data?.memory?.usedPercent ?? selectedRouter.ramUsagePercent, "%"]
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.routerStatLabel,
+                children: "RAM"
+              })]
+            }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.View, {
+              style: styles.routerStat,
+              children: [/*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.routerStatValue,
+                children: selectedRouter.connectedClients
+              }), /*#__PURE__*/(0, _jsxRuntime.jsx)(_reactNative.Text, {
+                style: styles.routerStatLabel,
+                children: "Clients"
+              })]
             })]
           })]
         }), /*#__PURE__*/(0, _jsxRuntime.jsxs)(_reactNative.Text, {
@@ -127332,6 +127480,85 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
       color: _theme.COLORS.textMuted,
       marginBottom: _theme.SPACING.xs
     },
+    scopeCard: {
+      marginBottom: _theme.SPACING.md,
+      borderColor: 'rgba(99, 102, 241, 0.4)'
+    },
+    scopeLabel: {
+      color: _theme.COLORS.textMuted,
+      fontSize: 10,
+      fontWeight: '800',
+      letterSpacing: 1,
+      marginBottom: _theme.SPACING.xs
+    },
+    scopeDropdown: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: _theme.COLORS.surfaceLight,
+      borderColor: _theme.COLORS.border,
+      borderWidth: 1,
+      borderRadius: _theme.RADIUS.md,
+      paddingHorizontal: _theme.SPACING.md,
+      paddingVertical: _theme.SPACING.sm
+    },
+    scopeDropdownText: {
+      flex: 1,
+      color: _theme.COLORS.text,
+      fontSize: 13,
+      fontWeight: '700',
+      marginHorizontal: _theme.SPACING.sm
+    },
+    scopeMenu: {
+      marginTop: _theme.SPACING.xs,
+      backgroundColor: _theme.COLORS.surfaceLight,
+      borderColor: _theme.COLORS.border,
+      borderWidth: 1,
+      borderRadius: _theme.RADIUS.md,
+      overflow: 'hidden'
+    },
+    scopeMenuItem: {
+      paddingHorizontal: _theme.SPACING.md,
+      paddingVertical: _theme.SPACING.sm,
+      borderBottomColor: _theme.COLORS.border,
+      borderBottomWidth: 1
+    },
+    scopeMenuItemActive: {
+      backgroundColor: 'rgba(99, 102, 241, 0.18)'
+    },
+    scopeMenuName: {
+      color: _theme.COLORS.text,
+      fontSize: 13,
+      fontWeight: '700'
+    },
+    scopeMenuMeta: {
+      color: _theme.COLORS.textSecondary,
+      fontSize: 11,
+      marginTop: 2
+    },
+    routerStatsGrid: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      gap: _theme.SPACING.xs,
+      marginTop: _theme.SPACING.sm
+    },
+    routerStat: {
+      width: '23%',
+      minWidth: 70,
+      alignItems: 'center',
+      backgroundColor: _theme.COLORS.surfaceLight,
+      borderRadius: _theme.RADIUS.md,
+      paddingVertical: _theme.SPACING.sm
+    },
+    routerStatValue: {
+      color: _theme.COLORS.text,
+      fontSize: 12,
+      fontWeight: '800'
+    },
+    routerStatLabel: {
+      color: _theme.COLORS.textMuted,
+      fontSize: 10,
+      marginTop: 3
+    },
     tenantCard: {
       padding: _theme.SPACING.md,
       marginBottom: _theme.SPACING.sm,
@@ -127404,7 +127631,7 @@ __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, expor
     }
   });
   var _default = exports.default = PlatformDashboardScreen;
-},1117,[1,40,29,134,45,671,835,935,936,911,922,912,836,271]);
+},1117,[1,40,29,134,680,45,671,835,935,936,911,922,912,962,943,836,271]);
 __d(function (global, require, _$$_IMPORT_DEFAULT, _$$_IMPORT_ALL, module, exports, _dependencyMap) {
   var _interopRequireDefault = require(_dependencyMap[0]);
   Object.defineProperty(exports, "__esModule", {
