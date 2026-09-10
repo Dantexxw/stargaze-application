@@ -8,6 +8,7 @@ interface QuickActionsProps {
   onRebootGateway: () => void;
   onSendSmsBlast: () => void;
   onOpenTopology: () => void;
+  visibleActionIds?: string[];
 }
 
 export const QuickActions: React.FC<QuickActionsProps> = ({
@@ -15,6 +16,7 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
   onRebootGateway,
   onSendSmsBlast,
   onOpenTopology,
+  visibleActionIds,
 }) => {
   const actions = [
     {
@@ -51,11 +53,15 @@ export const QuickActions: React.FC<QuickActionsProps> = ({
     },
   ];
 
+  const visibleActions = visibleActionIds
+    ? actions.filter((action) => visibleActionIds.includes(action.id))
+    : actions;
+
   return (
     <View style={styles.container}>
       <Text style={styles.sectionTitle}>QUICK ACTIONS</Text>
       <View style={styles.grid}>
-        {actions.map((act) => (
+        {visibleActions.map((act) => (
           <TouchableOpacity
             key={act.id}
             activeOpacity={0.75}

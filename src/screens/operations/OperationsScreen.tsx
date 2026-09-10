@@ -8,6 +8,7 @@ import {
   TextInput,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Header } from '../../components/common/Header';
@@ -117,8 +118,9 @@ export const OperationsScreen: React.FC = () => {
             try {
               await rebootDevice(deviceId);
               Alert.alert('Success', `${deviceName} reboot initiated.`);
-            } catch {
-              Alert.alert('Status', `${deviceName} reboot command queued.`);
+            } catch (error) {
+              console.warn('[OperationsScreen] Device reboot failed:', error);
+              Alert.alert('Reboot Failed', `The VPS could not reboot ${deviceName}.`);
             }
           },
         },
@@ -130,8 +132,9 @@ export const OperationsScreen: React.FC = () => {
     try {
       const res = await disconnectDevice(mac);
       Alert.alert('Client Disconnected', res.message);
-    } catch {
-      Alert.alert('Dispatched', `Disconnect signal sent to MikroTik for client ${mac}.`);
+    } catch (error) {
+      console.warn('[OperationsScreen] Client disconnect failed:', error);
+      Alert.alert('Disconnect Failed', `The VPS could not disconnect client ${mac}.`);
     }
   };
 
@@ -182,7 +185,12 @@ export const OperationsScreen: React.FC = () => {
       />
 
       {/* Main Tab Segmented Control */}
-      <View style={styles.tabBar}>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.tabBar}
+        style={styles.tabBarScroll}
+      >
         <TouchableOpacity
           activeOpacity={0.7}
           onPress={() => setActiveTab('live_ap_hosts')}
@@ -267,7 +275,7 @@ export const OperationsScreen: React.FC = () => {
             Alerts ({activeCriticalAlerts.length})
           </Text>
         </TouchableOpacity>
-      </View>
+      </ScrollView>
 
       <ScrollView
         contentContainerStyle={styles.scrollContent}
@@ -390,7 +398,12 @@ export const OperationsScreen: React.FC = () => {
             </View>
 
             {/* Device Table/Cards */}
-            {searchQuery.trim() || hostFilter !== 'all' ? (
+            {isLoadingTopology ? (
+              <Card style={styles.emptyCard}>
+                <ActivityIndicator color={COLORS.primaryLight} />
+                <Text style={styles.emptyTitle}>Loading live access points...</Text>
+              </Card>
+            ) : searchQuery.trim() || hostFilter !== 'all' ? (
               <View>
                 <Text style={styles.resultCountText}>
                   Showing {filteredFlatHosts.length} matching connected devices:
@@ -403,7 +416,7 @@ export const OperationsScreen: React.FC = () => {
                   />
                 ))}
               </View>
-            ) : (
+            ) : filteredPorts.length > 0 ? (
               filteredPorts.map((portTop) => (
                 <PortApCard
                   key={portTop.portId}
@@ -411,6 +424,14 @@ export const OperationsScreen: React.FC = () => {
                   onDisconnectDevice={handleDisconnectHost}
                 />
               ))
+            ) : (
+              <Card style={styles.emptyCard}>
+                <Ionicons name="radio-outline" size={28} color={COLORS.textMuted} />
+                <Text style={styles.emptyTitle}>No live access points reported</Text>
+                <Text style={styles.emptySubtitle}>
+                  The VPS returned no topology ports for this tenant.
+                </Text>
+              </Card>
             )}
           </View>
         )}
@@ -428,7 +449,17 @@ export const OperationsScreen: React.FC = () => {
         {/* TAB 3: HARDWARE & GATEWAYS */}
         {activeTab === 'hardware' && (
           <View>
-            {devices.map((device) => (
+            {isLoadingDevices ? (
+              <Card style={styles.emptyCard}>
+                <ActivityIndicator color={COLORS.primaryLight} />
+                <Text style={styles.emptyTitle}>Loading gateways...</Text>
+              </Card>
+            ) : devices.length === 0 ? (
+              <Card style={styles.emptyCard}>
+                <Ionicons name="hardware-chip-outline" size={28} color={COLORS.textMuted} />
+                <Text style={styles.emptyTitle}>No gateways reported</Text>
+              </Card>
+            ) : devices.map((device) => (
               <DeviceCard
                 key={device.id}
                 device={device}
@@ -510,7 +541,9 @@ export const OperationsScreen: React.FC = () => {
                       variant="secondary"
                       size="sm"
                       onPress={() => {
-                        Alert.alert('Alert Acknowledged', 'Incident logged.');
+                        acknowledgeAlert(alert.id)
+                          .then(() => Alert.alert('Alert Acknowledged', 'Incident logged.'))
+                          .catch(() => Alert.alert('Acknowledgement Failed', 'The VPS could not update this alert.'));
                       }}
                     />
                   )}
@@ -554,11 +587,15 @@ const styles = StyleSheet.create({
     borderBottomColor: COLORS.border,
     paddingHorizontal: SPACING.xs,
   },
+  tabBarScroll: {
+    flexGrow: 0,
+    backgroundColor: COLORS.surface,
+  },
   tabButton: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    minWidth: 118,
     paddingVertical: SPACING.md,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
@@ -730,5 +767,23 @@ const styles = StyleSheet.create({
   alertTimestamp: {
     fontSize: 11,
     color: COLORS.textMuted,
+  },
+  emptyCard: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: SPACING.xl,
+    marginTop: SPACING.sm,
+  },
+  emptyTitle: {
+    color: COLORS.text,
+    fontSize: 14,
+    fontWeight: '700',
+    marginTop: SPACING.sm,
+  },
+  emptySubtitle: {
+    color: COLORS.textSecondary,
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: SPACING.xs,
   },
 });

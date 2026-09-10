@@ -35,6 +35,7 @@ export const DashboardScreen: React.FC = () => {
   const navigation = useNavigation<BottomTabNavigationProp<MainTabParamList>>();
   const { data: metrics, isLoading, error, refetch } = useDashboardData();
   const user = useAuthStore((state) => state.user);
+  const canUseAdminControls = useAuthStore((state) => state.isSuperAdmin());
 
   const [refreshing, setRefreshing] = useState(false);
   const [speedtestVisible, setSpeedtestVisible] = useState(false);
@@ -195,22 +196,25 @@ export const DashboardScreen: React.FC = () => {
               <Text style={styles.toolkitSubtitle}>Interference</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.toolkitBtn}
-              onPress={() => setProvisionVisible(true)}
-              activeOpacity={0.8}
-            >
-              <View style={[styles.toolkitIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.2)' }]}>
-                <Ionicons name="person-add" size={18} color={COLORS.amber} />
-              </View>
-              <Text style={styles.toolkitTitle}>Provision</Text>
-              <Text style={styles.toolkitSubtitle}>New PPPoE</Text>
-            </TouchableOpacity>
+            {canUseAdminControls && (
+              <TouchableOpacity
+                style={styles.toolkitBtn}
+                onPress={() => setProvisionVisible(true)}
+                activeOpacity={0.8}
+              >
+                <View style={[styles.toolkitIconWrap, { backgroundColor: 'rgba(245, 158, 11, 0.2)' }]}>
+                  <Ionicons name="person-add" size={18} color={COLORS.amber} />
+                </View>
+                <Text style={styles.toolkitTitle}>Provision</Text>
+                <Text style={styles.toolkitSubtitle}>New PPPoE</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
         {/* Quick Action Shortcuts */}
         <QuickActions
+          visibleActionIds={canUseAdminControls ? ['voucher', 'reboot', 'sms', 'topology'] : ['topology']}
           onGenerateVoucher={() => {
             navigation.navigate('Customers');
           }}

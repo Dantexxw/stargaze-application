@@ -197,9 +197,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     get().user?.role === 'TENANT_ADMIN' ||
     get().user?.role === 'BILLING_ADMIN',
   canConfigureRouters: () => get().user?.role === 'SUPER_ADMIN',
-  canRebootGateways: () =>
-    get().user?.role === 'SUPER_ADMIN' || get().user?.role === 'TENANT_ADMIN',
-  canDispatchTechnicians: () =>
-    get().user?.role === 'SUPER_ADMIN' || get().user?.role === 'TENANT_ADMIN',
+  canRebootGateways: () => get().user?.role === 'SUPER_ADMIN',
+  canDispatchTechnicians: () => get().user?.role === 'SUPER_ADMIN',
   canProvisionSubscribers: () => !!get().user,
 }));

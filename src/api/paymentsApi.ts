@@ -10,6 +10,38 @@ import {
   StkPushResponse,
 } from '../types/models';
 
+function isToday(timestamp: string | undefined): boolean {
+  if (!timestamp) return false;
+  const date = new Date(timestamp);
+  const now = new Date();
+  return (
+    date.getFullYear() === now.getFullYear() &&
+    date.getMonth() === now.getMonth() &&
+    date.getDate() === now.getDate()
+  );
+}
+
+function getMpesaRevenueForDay(payments: any[], dayOffset = 0): number {
+  const target = new Date();
+  target.setDate(target.getDate() - dayOffset);
+  return payments.reduce((total, payment) => {
+    const method = String(payment.method || payment.paymentMethod || '').toUpperCase();
+    const status = String(payment.status || '').toUpperCase();
+    const timestamp = payment.paidAt || payment.createdAt;
+    const date = timestamp ? new Date(timestamp) : null;
+    const matchesDay =
+      date &&
+      date.getFullYear() === target.getFullYear() &&
+      date.getMonth() === target.getMonth() &&
+      date.getDate() === target.getDate();
+    return matchesDay &&
+      status === 'COMPLETED' &&
+      (!method || method === 'MPESA')
+      ? total + Number(payment.amount || 0)
+      : total;
+  }, 0);
+}
+
 export const paymentsApi = {
   getHotspotPlans: async (): Promise<HotspotPlan[]> => {
     try {
@@ -39,7 +71,12 @@ export const paymentsApi = {
     try {
       // 1. Fetch payments with live analytics from VPS
       const payRes = await apiClient.get<any>('/payments?limit=100');
-      const payAnalytics = payRes.data?.analytics;
+      const payBody = payRes.data;
+      const payments: any[] = Array.isArray(payBody?.data)
+        ? payBody.data
+        : Array.isArray(payBody)
+        ? payBody
+        : [];
 
       // 2. Fetch platform dashboard for operations metrics
       let platformRes: any = null;
@@ -48,29 +85,30 @@ export const paymentsApi = {
         platformRes = plat.data?.data ?? plat.data;
       } catch {}
 
-      const totalRevenue =
-        Number(payAnalytics?.totalRevenue) ||
-        Number(platformRes?.finance?.monthPayments) ||
-        0;
+      const totalRevenue = getMpesaRevenueForDay(payments);
+      const yesterdayRevenue = getMpesaRevenueForDay(payments, 1);
       const completedTxns =
-        Number(payAnalytics?.totalCompleted) ||
-        Number(platformRes?.finance?.monthTransactions) ||
-        0;
+        payments.filter((payment) =>
+          isToday(payment.paidAt || payment.createdAt) &&
+          String(payment.status || '').toUpperCase() === 'COMPLETED'
+        ).length;
       const customersCount =
         Number(platformRes?.operations?.customers) || 0;
       const avgTicket =
-        Number(payAnalytics?.avgTicket) ||
-        (completedTxns > 0 ? totalRevenue / completedTxns : 0);
-      const completionRate =
-        Number(payAnalytics?.completionRate) ||
-        (payAnalytics?.totalTransactions && payAnalytics.totalTransactions > 0
-          ? Math.round((completedTxns / payAnalytics.totalTransactions) * 1000) / 10
-          : 0);
+        completedTxns > 0 ? totalRevenue / completedTxns : 0;
+      const todayTransactions = payments.filter((payment) =>
+        isToday(payment.paidAt || payment.createdAt)
+      );
+      const completionRate = todayTransactions.length > 0
+        ? Math.round((completedTxns / todayTransactions.length) * 1000) / 10
+        : 0;
 
       return {
         todayRevenue: totalRevenue,
-        yesterdayRevenue: Math.round(totalRevenue * 0.88),
-        revenueGrowthPercent: 0,
+        yesterdayRevenue,
+        revenueGrowthPercent: yesterdayRevenue > 0
+          ? Math.round(((totalRevenue - yesterdayRevenue) / yesterdayRevenue) * 1000) / 10
+          : 0,
         activeSubscribers: customersCount,
         hotspotSalesCount: completedTxns,
         conversionRatePercent: completionRate,

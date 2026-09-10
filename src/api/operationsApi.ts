@@ -11,6 +11,76 @@ import {
 } from '../types/models';
 
 /** Maps VPS /dashboard/operations OR /dashboard/platform response → DashboardMetrics */
+function getTodayMpesaRevenue(payments: any[]): number {
+  const now = new Date();
+  return payments.reduce((total, payment) => {
+    const timestamp = payment.paidAt || payment.createdAt;
+    const date = timestamp ? new Date(timestamp) : null;
+    const isToday =
+      date &&
+      date.getFullYear() === now.getFullYear() &&
+      date.getMonth() === now.getMonth() &&
+      date.getDate() === now.getDate();
+    const method = String(payment.method || payment.paymentMethod || '').toUpperCase();
+    const status = String(payment.status || '').toUpperCase();
+
+    return isToday && status === 'COMPLETED' && (!method || method === 'MPESA')
+      ? total + Number(payment.amount || 0)
+      : total;
+  }, 0);
+}
+
+function normalizeNetworkDevice(device: any): NetworkDevice {
+  return {
+    ...device,
+    type: String(device.type || '').toLowerCase() === 'mikrotik'
+      ? 'mikrotik_router'
+      : device.type || 'cpe',
+    ipAddress: device.ipAddress || device.managementIp || '—',
+    macAddress: device.macAddress || '—',
+    status: String(device.status || '').toLowerCase() === 'online' ? 'online' : 'offline',
+    model: device.model || device.vendor || 'Network device',
+    uptime: device.uptime || '—',
+    cpuLoadPercent: Number(device.cpuLoadPercent || device.cpuLoad || 0),
+    ramUsagePercent: Number(device.ramUsagePercent || device.ramUsage || 0),
+    connectedClients: Number(device.connectedClients || device.connectedDevices || 0),
+    rxRateMbps: Number(device.rxRateMbps || 0),
+    txRateMbps: Number(device.txRateMbps || 0),
+    location: device.location || device.metadata?.locationName || 'Unassigned site',
+  };
+}
+
+function normalizeTopology(body: any): PortApTopology[] {
+  const ports = Array.isArray(body) ? body : body?.ports;
+  if (!Array.isArray(ports)) return [];
+  return ports.map((port: any, index: number) => ({
+    portId: port.portId || port.portName || `port-${index}`,
+    portName: port.portName || port.defaultName || `Port ${index + 1}`,
+    apName: port.accessPoint?.name || 'No access point',
+    apModel: port.accessPoint?.model || '—',
+    linkSpeed: port.speed || 'Unknown',
+    status: port.isRunning ? 'running' : 'link_down',
+    connectedHosts: Number(port.connectedDeviceCount || port.bridgeHostCount || 0),
+    activePaidSessions: Number(port.activeSessionCount || 0),
+    ipAddress: port.accessPoint?.ipAddress || '—',
+    macAddress: port.accessPoint?.macAddress || '—',
+    location: body?.routerName || 'Network site',
+    devices: (port.clients || []).map((client: any, clientIndex: number) => ({
+      id: client.id || client.mac || `${port.portName}-${clientIndex}`,
+      hostname: client.hostname || 'Connected device',
+      ipAddress: client.ip || '—',
+      macAddress: client.mac || '—',
+      status: client.isAuthenticated ? 'active_paid' : 'connected_unpaid',
+      username: client.username,
+      sessionPlan: client.paidSession || client.planCode,
+      expiresAt: client.expiresAt,
+      rxBytes: Number(client.bytesIn || 0),
+      txBytes: Number(client.bytesOut || 0),
+      portId: port.portId || port.portName,
+    })),
+  }));
+}
+
 function mapVpsDashboard(vps: any): DashboardMetrics {
   // Platform dashboard shape: { tenants, network, operations, finance }
   // Operations dashboard shape: { clients, plans, usage, payments, support }
@@ -28,9 +98,7 @@ function mapVpsDashboard(vps: any): DashboardMetrics {
     ? (vps.network?.routers ?? 0)
     : (vps.network?.routers ?? 0);
 
-  const todayRevenue = isPlatform
-    ? (vps.finance?.monthPayments ?? 0)
-    : (vps.payments?.recent ?? 0);
+  const todayRevenue = 0;
 
   const openTickets = isPlatform
     ? (vps.operations?.openTickets ?? 0)
@@ -87,7 +155,25 @@ export const operationsApi = {
     try {
       const response = await apiClient.get<any>('/dashboard/operations');
       const raw = response.data.data ?? response.data;
-      return mapVpsDashboard(raw);
+      const metrics = mapVpsDashboard(raw);
+      try {
+        const paymentsResponse = await apiClient.get<any>('/payments?limit=250');
+        const paymentsBody = paymentsResponse.data?.data;
+        const payments = Array.isArray(paymentsBody)
+          ? paymentsBody
+          : Array.isArray(paymentsResponse.data)
+          ? paymentsResponse.data
+          : [];
+        const todayRevenue = getTodayMpesaRevenue(payments);
+        return {
+          ...metrics,
+          todayRevenue,
+          revenueTarget: todayRevenue > 0 ? Math.round(todayRevenue * 1.5) : 0,
+        };
+      } catch (paymentsError) {
+        console.warn('[operationsApi] Failed to fetch today M-Pesa revenue:', paymentsError);
+        return metrics;
+      }
     } catch {
       try {
         const response = await apiClient.get<any>('/dashboard/platform');
@@ -102,7 +188,12 @@ export const operationsApi = {
   getEmergencyAlerts: async (): Promise<EmergencyAlert[]> => {
     try {
       const response = await apiClient.get<ApiResponse<EmergencyAlert[]>>('/network/access-points-alerts');
-      return response.data.data ?? [];
+      const body = response.data as ApiResponse<EmergencyAlert[]> | EmergencyAlert[];
+      return Array.isArray(body)
+        ? body
+        : Array.isArray((body as any).alerts)
+        ? (body as any).alerts
+        : body.data ?? [];
     } catch (error) {
       console.warn('[operationsApi] Failed to fetch emergency alerts:', error);
       throw error;
@@ -117,7 +208,8 @@ export const operationsApi = {
   getAvailableTechnicians: async (): Promise<FieldTechnician[]> => {
     try {
       const response = await apiClient.get<ApiResponse<FieldTechnician[]>>('/network/technicians');
-      return response.data.data ?? [];
+      const body = response.data as ApiResponse<FieldTechnician[]> | FieldTechnician[];
+      return Array.isArray(body) ? body : body.data ?? [];
     } catch (error) {
       console.warn('[operationsApi] Failed to fetch technicians:', error);
       throw error;
@@ -142,7 +234,7 @@ export const operationsApi = {
   getAccessPointsTopology: async (): Promise<PortApTopology[]> => {
     try {
       const response = await apiClient.get<ApiResponse<PortApTopology[]>>('/network/access-points-topology');
-      return response.data.data ?? [];
+      return normalizeTopology(response.data);
     } catch (error) {
       console.warn('[operationsApi] Failed to fetch topology:', error);
       throw error;
@@ -152,7 +244,9 @@ export const operationsApi = {
   getDevices: async (): Promise<NetworkDevice[]> => {
     try {
       const response = await apiClient.get<ApiResponse<NetworkDevice[]>>('/network/devices');
-      return response.data.data ?? [];
+      const body = response.data as ApiResponse<NetworkDevice[]> | NetworkDevice[];
+      const devices = Array.isArray(body) ? body : body.data ?? [];
+      return devices.map(normalizeNetworkDevice);
     } catch (error) {
       console.warn('[operationsApi] Failed to fetch network devices:', error);
       throw error;
@@ -162,7 +256,8 @@ export const operationsApi = {
   getAlerts: async (): Promise<AlertItem[]> => {
     try {
       const response = await apiClient.get<ApiResponse<AlertItem[]>>('/network/alerts');
-      return response.data.data ?? [];
+      const body = response.data as ApiResponse<AlertItem[]> | AlertItem[];
+      return Array.isArray(body) ? body : body.data ?? [];
     } catch (error) {
       console.warn('[operationsApi] Failed to fetch network alerts:', error);
       throw error;

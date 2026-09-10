@@ -235,11 +235,13 @@ export const SettingsProfileScreen: React.FC = () => {
             </View>
           </View>
 
-          {/* Test Trigger Simulator */}
-          <Text style={[styles.channelLabel, { marginTop: SPACING.md }]}>
-            TEST NOTIFICATIONS & DEEP LINKING:
-          </Text>
-          <View style={styles.simulatorButtonGroup}>
+          {canManageTenants() && (
+            <>
+              {/* Test Trigger Simulator */}
+              <Text style={[styles.channelLabel, { marginTop: SPACING.md }]}>
+                TEST NOTIFICATIONS & DEEP LINKING:
+              </Text>
+              <View style={styles.simulatorButtonGroup}>
             <TouchableOpacity
               activeOpacity={0.75}
               disabled={isSimulating}
@@ -275,12 +277,16 @@ export const SettingsProfileScreen: React.FC = () => {
                 🎫 Field Ticket
               </Text>
             </TouchableOpacity>
-          </View>
+              </View>
+            </>
+          )}
         </Card>
 
-        {/* Switch Operator Account (RBAC) */}
-        <Text style={styles.sectionHeader}>SWITCH OPERATOR ACCOUNT (RBAC)</Text>
-        <Card style={styles.sectionCard}>
+        {canManageTenants() && (
+          <>
+            {/* Switch Operator Account (RBAC) */}
+            <Text style={styles.sectionHeader}>SWITCH OPERATOR ACCOUNT (RBAC)</Text>
+            <Card style={styles.sectionCard}>
           <Text style={styles.switcherSubtitle}>
             Switch session to any verified production role with synced permissions:
           </Text>
@@ -330,7 +336,9 @@ export const SettingsProfileScreen: React.FC = () => {
               );
             })}
           </View>
-        </Card>
+            </Card>
+          </>
+        )}
 
         {/* Tenant Switching Card */}
         <Text style={styles.sectionHeader}>ACTIVE ISP BRANCH & TERRITORY</Text>
